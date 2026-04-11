@@ -9,10 +9,17 @@ Projekt aitab vähendada patsientide eksimist hoones, parandada kasutajakogemust
 ---
 
 ## 🧱 Arhitektuur
-### 🖥️ Backend  
--JavaScript
+### 🖥️ Backend
+-Node.js
+-Sequelize
 
 ### 🎨 Frontend  
--HTML/CSS
+-HTML
+-CSS
+-JavaScript
+
+### 🗄️ Andmebaas
+-MySQL
+-Sequelize (ORM) 
 
 ---
