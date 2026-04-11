@@ -9,7 +9,6 @@ Projekt aitab vähendada patsientide eksimist hoones, parandada kasutajakogemust
 ---
 
 ## 🧱 Arhitektuur
-
 ### 🖥️ Backend  
 -JavaScript
 
