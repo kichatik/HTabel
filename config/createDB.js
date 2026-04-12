@@ -1,9 +1,9 @@
 const sequelize = require("../config/database");
-const Employee = require('../models/employee');
-const Room = require('../models/floor');
-const User = require('../models/user');
-const FetchFlors = require('../models/fetchFloors');
-const Profession = require('../models/profession');
+require('../models/employee');
+require('../models/floor');
+require('../models/user');
+require('../models/floorGroup');
+require('../models/profession');
 
 async function syncDatabase() {
     try {

@@ -9,41 +9,37 @@ const Employee = sequelize.define('Employee', {
     },
     firstName: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
     },
-    profession: {
+    lastName: {
         type: DataTypes.STRING,
+        allowNull: true
+    },
+    professionId: {
+        type: DataTypes.INTEGER,
         allowNull: false
     },
     roomNumber: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    WorkTeam: {
+    workTeam: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
     },
-    monday: {
-        type: DataTypes.STRING
-    },
-    tuesday: {
-        type: DataTypes.STRING
-    },
-    wednesday: {
-        type: DataTypes.STRING
-    },
-    thursday: {
-        type: DataTypes.STRING
-    },
-    friday: {
-        type: DataTypes.STRING
-    },
-    saturday: {
-        type: DataTypes.STRING
-    },
-    sunday: {
-        type: DataTypes.STRING
-    },
+    monday: DataTypes.STRING,
+    tuesday: DataTypes.STRING,
+    wednesday: DataTypes.STRING,
+    thursday: DataTypes.STRING,
+    friday: DataTypes.STRING,
+    saturday: DataTypes.STRING,
+    sunday: DataTypes.STRING
 }, {
     timestamps: false
 });

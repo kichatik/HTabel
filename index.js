@@ -1,29 +1,46 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const session = require('express-session');
+
 const userRoutes = require('./routes/userRoutes');
 const floorRoutes = require('./routes/floorRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
-const fetchRoutes = require('./routes/fetchFloorRoutes');
+const fetchRoutes = require('./routes/floorGroupRoutes');
 const professionRoutes = require('./routes/professionRoutes');
 
-const path = require('path');
-
 const app = express();
+
 app.use(cors());
 app.use(express.json());
+app.use(session({
+    secret: 'my_secret_key_123',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        secure: false
+    }
+}));
 
+// API routes
 userRoutes(app);
 floorRoutes(app);
 employeeRoutes(app);
 fetchRoutes(app);
 professionRoutes(app);
 
-// Обслуживание статических файлов
+// Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Обработчик для корневого маршрута, который будет отдавать login.html
+// Root route
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public')); 
+    res.redirect('/login.html');
+});
+
+// 404 handler — always last
+app.use((req, res) => {
+    res.status(404).send('Not Found');
 });
 
 const PORT = process.env.PORT || 3000;
@@ -31,9 +48,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
     console.log(`Сервер запущен на порту ${PORT}`);
 
-     // Динамически импортируем open
-     const { default: open } = await import('open');
-
-     // Открытие браузера на странице login.html
-     open(`http://localhost:${PORT}/login.html`);
+    const open = (await import('open')).default;
+    open(`http://localhost:${PORT}/login.html`);
 });

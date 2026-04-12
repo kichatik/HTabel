@@ -1,14 +1,20 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const Haigla = sequelize.define('Haigla', {
+const Hospital = sequelize.define('Hospital', {
     firstName: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
     },
     roomNumber: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
     },
     monday: {
         type: DataTypes.STRING,
@@ -46,4 +52,4 @@ const Haigla = sequelize.define('Haigla', {
     timestamps: false
 });
 
-module.exports = Haigla;
+module.exports = Hospital;

@@ -2,15 +2,18 @@ module.exports = app => {
     const users = require('../controllers/userController');
     const router = require('express').Router();
 
-    // Создание нового пользователя
-    router.post('/register', users.create);
+    router.post('/setup-first-user', users.createFirstUser);
 
-    // Вход пользователя
-    router.post('/login', users.login); // Убедитесь, что путь правильный
+    router.post('/login', users.login);
 
-    // Получение всех пользователей (опционально, для тестирования)
+    router.post('/logout', users.logout);
+
+    // Кто сейчас вошёл
+    router.get('/me', users.me);
+
     router.get('/', users.findAll);
 
-    // Используйте определенные маршруты
-    app.use('/api/users', router); // Теперь /api/users/login будет правильным маршрутом для входа
+    router.post('/admin/users', users.createUserByAdmin);
+
+    app.use('/api/users', router);
 };

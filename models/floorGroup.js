@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const Floor = sequelize.define('Floor', {
+const FloorGroup = sequelize.define('FloorGroup', {
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
@@ -19,14 +19,7 @@ const Floor = sequelize.define('Floor', {
     floorName: {
         type: DataTypes.STRING,
         allowNull: false,
-        validate: {
-            notEmpty: {
-                msg: 'Название этажа обязательно.'
-            }
-        }
     }
 }, {
     timestamps: false,
 });
-
-module.exports = Floor;
