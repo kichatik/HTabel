@@ -1,10 +1,27 @@
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
 
+function validateRequiredCredentials(username, password) {
+    if (!username || !username.trim() || !password) {
+        return 'Kasutajanimi ja parool on kohustuslikud';
+    }
+
+    if (password.length < 6) {
+        return 'Parool peab sisaldama vähemalt 6 tähemärki';
+    }
+
+    return null;
+}
+
+function isAdmin(sessionUser) {
+    return Boolean(sessionUser && sessionUser.role === 'admin');
+}
+
 exports.login = async (req, res) => {
     const { username, password } = req.body;
+    const normalizedUsername = username?.trim();
 
-    if (!username || !username.trim() || !password) {
+    if (!normalizedUsername || !password) {
         return res.status(400).json({
             message: 'Kasutajanimi ja parool on kohustuslikud'
         });
@@ -12,7 +29,7 @@ exports.login = async (req, res) => {
 
     try {
         const user = await User.findOne({
-            where: { username: username.trim() }
+            where: { username: normalizedUsername }
         });
 
         if (!user) {
@@ -51,26 +68,20 @@ exports.login = async (req, res) => {
     }
 };
 
-exports.logout = async (req, res) => {
-    try {
-        req.session.destroy(err => {
-            if (err) {
-                return res.status(500).json({
-                    message: 'Viga väljalogimisel'
-                });
-            }
-
-            res.clearCookie('connect.sid');
-            return res.json({
-                message: 'Väljalogimine õnnestus'
+exports.logout = (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            console.error('Viga väljalogimisel:', err);
+            return res.status(500).json({
+                message: 'Viga väljalogimisel'
             });
+        }
+
+        res.clearCookie('connect.sid');
+        return res.json({
+            message: 'Väljalogimine õnnestus'
         });
-    } catch (error) {
-        console.error('Viga väljalogimisel:', error);
-        return res.status(500).json({
-            message: 'Serveri viga'
-        });
-    }
+    });
 };
 
 exports.me = async (req, res) => {
@@ -95,16 +106,12 @@ exports.me = async (req, res) => {
 exports.createFirstUser = async (req, res) => {
     try {
         const { username, password } = req.body;
+        const normalizedUsername = username?.trim();
 
-        if (!username || !username.trim() || !password) {
+        const validationError = validateRequiredCredentials(normalizedUsername, password);
+        if (validationError) {
             return res.status(400).json({
-                message: 'Kasutajanimi ja parool on kohustuslikud'
-            });
-        }
-
-        if (password.length < 6) {
-            return res.status(400).json({
-                message: 'Parool peab sisaldama vähemalt 6 tähemärki'
+                message: validationError
             });
         }
 
@@ -117,7 +124,7 @@ exports.createFirstUser = async (req, res) => {
         }
 
         const newUser = await User.create({
-            username: username.trim(),
+            username: normalizedUsername,
             password,
             role: 'admin'
         });
@@ -140,30 +147,26 @@ exports.createFirstUser = async (req, res) => {
 
 exports.createUserByAdmin = async (req, res) => {
     try {
-        if (!req.session.user || req.session.user.role !== 'admin') {
+        if (!isAdmin(req.session.user)) {
             return res.status(403).json({
                 message: 'Ligipääs keelatud'
             });
         }
 
         const { username, password, role } = req.body;
+        const normalizedUsername = username?.trim();
 
-        if (!username || !username.trim() || !password) {
+        const validationError = validateRequiredCredentials(normalizedUsername, password);
+        if (validationError) {
             return res.status(400).json({
-                message: 'Kasutajanimi ja parool on kohustuslikud'
-            });
-        }
-
-        if (password.length < 6) {
-            return res.status(400).json({
-                message: 'Parool peab sisaldama vähemalt 6 tähemärki'
+                message: validationError
             });
         }
 
         const safeRole = role === 'admin' ? 'admin' : 'user';
 
         const existingUser = await User.findOne({
-            where: { username: username.trim() }
+            where: { username: normalizedUsername }
         });
 
         if (existingUser) {
@@ -173,7 +176,7 @@ exports.createUserByAdmin = async (req, res) => {
         }
 
         const newUser = await User.create({
-            username: username.trim(),
+            username: normalizedUsername,
             password,
             role: safeRole
         });
@@ -193,7 +196,7 @@ exports.createUserByAdmin = async (req, res) => {
 
 exports.findAll = async (req, res) => {
     try {
-        if (!req.session.user || req.session.user.role !== 'admin') {
+        if (!isAdmin(req.session.user)) {
             return res.status(403).json({
                 message: 'Ligipääs keelatud'
             });
@@ -204,10 +207,10 @@ exports.findAll = async (req, res) => {
             order: [['id', 'ASC']]
         });
 
-        res.status(200).json(users);
+        return res.status(200).json(users);
     } catch (error) {
         console.error('Viga kasutajate hankimisel:', error);
-        res.status(500).json({
+        return res.status(500).json({
             message: 'Viga kasutajate hankimisel'
         });
     }

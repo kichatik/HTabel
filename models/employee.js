@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 
 const Employee = sequelize.define('Employee', {
     id: {
@@ -13,10 +13,6 @@ const Employee = sequelize.define('Employee', {
         validate: {
             notEmpty: true
         }
-    },
-    lastName: {
-        type: DataTypes.STRING,
-        allowNull: true
     },
     professionId: {
         type: DataTypes.INTEGER,
@@ -34,12 +30,25 @@ const Employee = sequelize.define('Employee', {
         }
     },
     monday: DataTypes.STRING,
+    mondayStatus: DataTypes.STRING,
+
     tuesday: DataTypes.STRING,
+    tuesdayStatus: DataTypes.STRING,
+
     wednesday: DataTypes.STRING,
+    wednesdayStatus: DataTypes.STRING,
+
     thursday: DataTypes.STRING,
+    thursdayStatus: DataTypes.STRING,
+
     friday: DataTypes.STRING,
+    fridayStatus: DataTypes.STRING,
+
     saturday: DataTypes.STRING,
-    sunday: DataTypes.STRING
+    saturdayStatus: DataTypes.STRING,
+
+    sunday: DataTypes.STRING,
+    sundayStatus: DataTypes.STRING
 }, {
     timestamps: false
 });

@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 
 const Profession = sequelize.define('Profession', {
     name: {
@@ -8,7 +8,7 @@ const Profession = sequelize.define('Profession', {
         unique: true,
         validate: {
             notEmpty: {
-                msg: 'Название профессии обязательно'
+                msg: 'Eriala nimi on kohustuslik'
             }
         }
     }

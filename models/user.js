@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 const bcrypt = require('bcrypt');
 
 const User = sequelize.define('User', {
@@ -14,7 +14,7 @@ const User = sequelize.define('User', {
         unique: true,
         validate: {
             notEmpty: {
-                msg: 'Имя пользователя обязательно'
+                msg: 'Kasutajanimi on kohustuslik'
             }
         }
     },
@@ -23,20 +23,19 @@ const User = sequelize.define('User', {
         allowNull: false,
         validate: {
             notEmpty: {
-                msg: 'Пароль обязателен'
+                msg: 'Parool on kohustuslik'
             },
             len: {
                 args: [6, 100],
-                msg: 'Пароль должен содержать минимум 6 символов'
+                msg: 'Parool peab sisaldama vähemalt 6 tähemärki'
             }
         }
     },
     role: {
-        type: DataTypes.STRING,
+        type: DataTypes.ENUM('admin', 'user'),
         allowNull: false,
-        defaultValue: 'user', // по умолчанию обычный пользователь
+        defaultValue: 'user',
     }
-
 }, {
     timestamps: false,
     hooks: {
@@ -46,14 +45,8 @@ const User = sequelize.define('User', {
             }
         },
         beforeCreate: async (user) => {
-           if (user.password) {
+            if (user.password) {
                 user.password = await bcrypt.hash(user.password, 10);
-            }
-
-            // 👇 если это первый пользователь — делаем его админом
-            const userCount = await User.count();
-            if (userCount === 0) {
-                user.role = 'admin';
             }
         },
         beforeUpdate: async (user) => {

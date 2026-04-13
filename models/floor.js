@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 
 const Floor = sequelize.define('Floor', {
     id: {
@@ -12,7 +12,7 @@ const Floor = sequelize.define('Floor', {
         allowNull: false,
         validate: {
             isInt: {
-                msg: 'Номер этажа должен быть целым числом.'
+                msg: 'Korruse number peab olema täisarv'
             }
         }
     },
@@ -21,7 +21,7 @@ const Floor = sequelize.define('Floor', {
         allowNull: false,
         validate: {
             notEmpty: {
-                msg: 'Название этажа обязательно.'
+                msg: 'Korruse nimi on kohustuslik'
             }
         }
     }

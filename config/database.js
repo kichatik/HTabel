@@ -12,8 +12,13 @@ const sequelize = new Sequelize(
     }
 );
 
-sequelize.authenticate()
-    .then(() => console.log('Подключение к БД успешно'))
-    .catch(err => console.error('Ошибка подключения к БД:', err));
+async function connectDB() {
+    try {
+        await sequelize.authenticate();
+        console.log('Подключение к БД успешно');
+    } catch (err) {
+        console.error('Ошибка подключения к БД:', err);
+    }
+}
 
-module.exports = sequelize;
+module.exports = { sequelize, connectDB };
