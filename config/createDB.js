@@ -2,7 +2,6 @@ const sequelize = require("../config/database");
 require('../models/employee');
 require('../models/floor');
 require('../models/user');
-//require('../models/floorGroup');
 require('../models/profession');
 
 async function syncDatabase() {
