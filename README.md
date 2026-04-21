@@ -50,12 +50,6 @@ Projekt aitab vähendada patsientide eksimist hoones, parandada kasutajakogemust
 
 ---
 
-## 👤 Autor
-
-Anzhelika Kichatova 
-
----
-
 ## 🚀 Paigaldus ja käivitamine
 
 1. Klooni projekt:
@@ -80,3 +74,10 @@ DB_NAME=htable
 ```bash
 npm start
 ```
+---
+
+## 👤 Autor
+
+Anzhelika Kichatova 
+
+---
