@@ -15,9 +15,9 @@ const sequelize = new Sequelize(
 async function connectDB() {
     try {
         await sequelize.authenticate();
-        console.log('Подключение к БД успешно');
+        console.log('Ühendus andmebaasiga õnnestus');
     } catch (err) {
-        console.error('Ошибка подключения к БД:', err);
+        console.error('Viga andmebaasiga ühendamisel:', err);
     }
 }
 
