@@ -23,7 +23,7 @@ Projekt aitab vähendada patsientide eksimist hoones, parandada kasutajakogemust
 
 ---
 
-### ⚙️ Funktsionaalsus
+## ⚙️ Funktsionaalsus
 - Hoone struktuuri haldamine (korrused, ruumid)
 - Asukohtade otsimine
 - API kaudu andmete pärimine ja haldamine
@@ -31,9 +31,9 @@ Projekt aitab vähendada patsientide eksimist hoones, parandada kasutajakogemust
 
 ---
 
-### 📂 Projekti struktuur
+## 📂 Projekti struktuur
 /src
-  /controllers
-  /models
-  /routes
+/controllers
+/models
+/routes
 /public
