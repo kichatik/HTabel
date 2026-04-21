@@ -32,8 +32,10 @@ Projekt aitab vähendada patsientide eksimist hoones, parandada kasutajakogemust
 ---
 
 ## 📂 Projekti struktuur
+```
 /src
 /controllers
 /models
 /routes
 /public
+```
