@@ -11,7 +11,7 @@ Projekt aitab vähendada patsientide eksimist hoones, parandada kasutajakogemust
 ## 🧱 Arhitektuur
 ### 🖥️ Backend
 - Node.js
-- Sequelize
+- Sequelize (ORM)
 
 ### 🎨 Frontend  
 - HTML
@@ -20,6 +20,20 @@ Projekt aitab vähendada patsientide eksimist hoones, parandada kasutajakogemust
 
 ### 🗄️ Andmebaas
 - MySQL
-- Sequelize (ORM) 
 
 ---
+
+### ⚙️ Funktsionaalsus
+- Hoone struktuuri haldamine (korrused, ruumid)
+- Asukohtade otsimine
+- API kaudu andmete pärimine ja haldamine
+- Lihtne kasutajaliides navigeerimiseks
+
+---
+
+### 📂 Projekti struktuur
+/src
+  /controllers
+  /models
+  /routes
+/public
