@@ -35,11 +35,11 @@ Projekt aitab vähendada patsientide eksimist hoones, parandada kasutajakogemust
 ```
 /HTabel
 │
-├── /config
-├── /controllers
-├── /models
-├── /routes
-├── /public
+├── config
+├── controllers
+├── models
+├── routes
+├── public
 │
 ├── .env
 ├── index.js
