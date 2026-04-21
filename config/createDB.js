@@ -2,16 +2,15 @@ const sequelize = require("../config/database");
 require('../models/employee');
 require('../models/floor');
 require('../models/user');
-//require('../models/floorGroup');
 require('../models/profession');
 
 async function syncDatabase() {
     try {
         await connectDB();
         await sequelize.sync();
-        console.log('База данных синхронизирована успешно.');
+        console.log('Andmebaas sünkroniseeriti edukalt.');
     } catch (error) {
-        console.error('Ошибка при синхронизации базы данных:', error);
+        console.error('Viga andmebaasi sünkroniseerimisel:', error);
     }
 }
 
