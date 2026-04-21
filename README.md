@@ -33,9 +33,17 @@ Projekt aitab vähendada patsientide eksimist hoones, parandada kasutajakogemust
 
 ## 📂 Projekti struktuur
 ```
-/src
-/controllers
-/models
-/routes
-/public
+/HTabel
+│
+├── /config
+├── /controllers
+├── /models
+├── /routes
+├── /public
+│
+├── .env
+├── index.js
+├── package.json
+├── package-lock.json
+└── README.md
 ```
