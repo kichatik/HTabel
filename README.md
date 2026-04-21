@@ -47,3 +47,36 @@ Projekt aitab vähendada patsientide eksimist hoones, parandada kasutajakogemust
 ├── package-lock.json
 └── README.md
 ```
+
+---
+
+## 👤 Autor
+
+Anzhelika Kichatova 
+
+---
+
+## 🚀 Paigaldus ja käivitamine
+
+1. Klooni projekt:
+```bash
+git clone https://github.com/kichatik/htable.git
+```
+
+2. Paigalda sõltuvused:
+```bash
+npm install
+```
+
+3. Loo `.env` fail:
+```env
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=yourpassword
+DB_NAME=htable
+```
+
+4. Käivita server:
+```bash
+npm start
+```
