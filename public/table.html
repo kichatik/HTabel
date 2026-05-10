@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sõtjad korrusel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #003366;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #000cbb;
+            color: white;
+        }
+
+        header h1 {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .container {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #003366;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+            height: 1px;
+            text-transform: uppercase;
+        }
+
+        tbody tr:nth-child(odd) td {
+            background-color: #00509e;
+        }
+
+        tbody tr:nth-child(even) td {
+            background-color: #003366;
+        }
+
+        .notification {
+            text-align: center;
+            color: red;
+            margin-top: 20px;
+            font-size: 18px;
+            display: none;
+        }
+
+        .bg-success {
+            background-color: green;
+        }
+
+        .bg-danger {
+            background-color: red;
+        }
+
+        #timer {
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            margin-right: 80px;
+        }
+
+        #countdownIcon {
+            margin-right: 5px;
+        }
+
+        .highlight {
+            background-color: white;
+            color: black;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 0;
+            font-size: 14px;
+            color: white;
+            margin-left: 5px;
+            text-transform: none;
+        }
+
+        .badge-warning {
+            background-color: orange;
+        }
+
+        .badge-primary {
+            background-color: blue;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div id="currentTime"></div>
+        <div style="margin-left: 10px;">
+            <span class="badge badge-warning">PT - Paaritu</span>
+            <span class="badge badge-primary">PS - Paaris</span>
+        </div>
+        <h1>NARVA HAIGLA VASTUVÕTUAEG</h1>
+        <div id="timer">
+            <img id="countdownIcon" src="https://img.icons8.com/ios-filled/50/ffffff/loading.png" alt="loading icon" width="18" height="18">
+            <span id="countdown">15</span> s
+        </div>
+        <div id="currentDate"></div>
+    </header>
+
+    <div class="container">
+        <div id="floorTables"></div>
+        <div id="notification" class="notification"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('currentTime').textContent = `${hours}:${minutes}:${seconds}`;
+
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            document.getElementById('currentDate').textContent = `${day}.${month}.${year}`;
+        }
+
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const floorNumber = parseInt(urlParams.get('floorNumber'), 10);
+        const floorType = urlParams.get('floor');
+
+        let currentEmployeeIndex = 0;
+        let employeesPerPage = calculateEmployeesPerPage();
+        let allEmployees = [];
+        let professions = [];
+
+        function calculateEmployeesPerPage() {
+            const rowHeight = 48;
+            const headerHeight = $('header').outerHeight(true);
+            const availableHeight = window.innerHeight - headerHeight - 40;
+            return Math.floor(availableHeight / rowHeight);
+        }
+
+        window.addEventListener('resize', () => {
+            employeesPerPage = calculateEmployeesPerPage();
+            displayEmployees(allEmployees.slice(currentEmployeeIndex, currentEmployeeIndex + employeesPerPage));
+        });
+
+        if (!floorNumber || !floorType) {
+            showNotification("URL-is puuduvad või on vigased parameetrid 'id' või 'floor'", 'error');
+        } else {
+            initPage();
+            setInterval(updateTimer, 1000);
+            setInterval(() => {
+                currentEmployeeIndex += employeesPerPage;
+
+                if (currentEmployeeIndex >= allEmployees.length) {
+                    currentEmployeeIndex = 0;
+                }
+
+                displayEmployees(allEmployees.slice(currentEmployeeIndex, currentEmployeeIndex + employeesPerPage));
+            }, 15000);
+        }
+
+        async function loadProfessions() {
+            try {
+                const response = await fetch('/api/profession');
+
+                if (!response.ok) {
+                    throw new Error('Viga erialade laadimisel');
+                }
+
+                professions = await response.json();
+            } catch (error) {
+                showNotification(`Viga erialade laadimisel: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadEmployees(floorType) {
+            try {
+                const response = await fetch('/employees');
+
+                if (!response.ok) {
+                    throw new Error('Viga töötajate laadimisel');
+                }
+
+                const employees = await response.json();
+                allEmployees = filterEmployeesByFloor(employees, floorType, floorNumber);
+                displayEmployees(allEmployees.slice(0, employeesPerPage));
+            } catch (error) {
+                showNotification(`Viga töötajate laadimisel: ${error.message}`, 'error');
+            }
+        }
+
+        async function initPage() {
+            await loadProfessions();
+            await loadEmployees(floorType);
+        }
+
+        function filterEmployeesByFloor(employees, floorType, floorId) {
+            return employees.filter(employee =>
+                employee.workTeam === floorType && getFloorFromRoomNumber(employee.roomNumber) === floorId
+            );
+        }
+
+        function getFloorFromRoomNumber(roomNumber) {
+            const roomString = String(roomNumber);
+            const match = roomString.match(/^(\d)/);
+            return match ? parseInt(match[1]) : null;
+        }
+
+        function getProfessionNameById(id) {
+            const profession = professions.find(p => Number(p.id) === Number(id));
+            return profession ? profession.name : '';
+        }
+
+        function displayEmployees(employees) {
+            const floorTables = $('#floorTables');
+            floorTables.empty();
+
+            if (employees.length === 0) {
+                floorTables.append('Töötajaid kuvamiseks ei ole');
+                return;
+            }
+
+            employees.sort((a, b) => parseInt(a.roomNumber, 10) - parseInt(b.roomNumber, 10));
+
+            const floorName = `Korrus ${floorNumber}`;
+            const currentDay = new Date().getDay();
+
+            const hasSaturdayData = employees.some(
+                employee => (employee.saturday && employee.saturday.trim()) || employee.saturdayStatus
+            );
+
+            const hasSundayData = employees.some(
+                employee => (employee.sunday && employee.sunday.trim()) || employee.sundayStatus
+            );
+
+            const table = `
+                <h3>${floorName}</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Perekonna- ja eesnimi</th>
+                            <th>Kabineti nr</th>
+                            <th>Eriala</th>
+                            <th class="${currentDay === 1 ? 'highlight' : ''}">Esmaspäev</th>
+                            <th class="${currentDay === 2 ? 'highlight' : ''}">Teisipäev</th>
+                            <th class="${currentDay === 3 ? 'highlight' : ''}">Kolmapäev</th>
+                            <th class="${currentDay === 4 ? 'highlight' : ''}">Neljapäev</th>
+                            <th class="${currentDay === 5 ? 'highlight' : ''}">Reede</th>
+                            ${hasSaturdayData ? `<th class="${currentDay === 6 ? 'highlight' : ''}">Laupäev</th>` : ''}
+                            ${hasSundayData ? `<th class="${currentDay === 0 ? 'highlight' : ''}">Pühapäev</th>` : ''}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${employees.map(employee => {
+                            const weekdaysCells = `
+                                <td>${formatDayCell(employee.monday, employee.mondayStatus)}</td>
+                                <td>${formatDayCell(employee.tuesday, employee.tuesdayStatus)}</td>
+                                <td>${formatDayCell(employee.wednesday, employee.wednesdayStatus)}</td>
+                                <td>${formatDayCell(employee.thursday, employee.thursdayStatus)}</td>
+                                <td>${formatDayCell(employee.friday, employee.fridayStatus)}</td>
+                                ${hasSaturdayData ? `<td>${formatDayCell(employee.saturday, employee.saturdayStatus)}</td>` : ''}
+                                ${hasSundayData ? `<td>${formatDayCell(employee.sunday, employee.sundayStatus)}</td>` : ''}
+                            `;
+
+                            return `
+                                <tr>
+                                    <td>${employee.firstName || ''}</td>
+                                    <td>${employee.roomNumber || ''}</td>
+                                    <td>${getProfessionNameById(employee.professionId)}</td>
+                                    ${weekdaysCells}
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            floorTables.html(table);
+        }
+
+        function formatStatusBadge(status) {
+            const normalizedStatus = String(status || '').trim().toUpperCase();
+
+            if (normalizedStatus === 'PT') {
+                return '<span class="badge badge-warning">PT</span>';
+            }
+
+            if (normalizedStatus === 'PS') {
+                return '<span class="badge badge-primary">PS</span>';
+            }
+
+            return '';
+        }
+
+        function formatDayCell(timeValue, statusValue) {
+            const timeText = (timeValue || '').trim();
+            const statusBadge = formatStatusBadge(statusValue);
+
+            if (timeText && statusBadge) {
+                return `${timeText} ${statusBadge}`;
+            }
+
+            if (timeText) {
+                return timeText;
+            }
+
+            if (statusBadge) {
+                return statusBadge;
+            }
+
+            return '';
+        }
+
+        function showNotification(message, type) {
+            const notification = $('#notification');
+            notification.removeClass('bg-success bg-danger').addClass(type === 'success' ? 'bg-success' : 'bg-danger');
+            notification.text(message);
+            notification.fadeIn();
+
+            setTimeout(() => {
+                notification.fadeOut();
+            }, 3000);
+        }
+
+        function updateTimer() {
+            const countdownElement = document.getElementById('countdown');
+            const countdownValue = parseInt(countdownElement.textContent, 10) || 15;
+
+            countdownElement.textContent = countdownValue <= 1 ? 15 : countdownValue - 1;
+        }
+    </script>
+</body>
+</html>
