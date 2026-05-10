@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korruse detallid</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <style>
+        .container {
+            margin-top: 20px;
+        }
+
+        .notification {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #28a745;
+            z-index: 1000;
+        }
+
+        .button-container {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: flex-end; 
+        }
+
+        .delete-btn {
+            background-color: red;
+            color: black;
+        }
+
+        td {
+            white-space: nowrap;
+        }
+
+        .inline-add-trigger {
+            margin-top: 8px;
+            padding: 0;
+            border: none;
+            background: none;
+            color: #007bff;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .inline-add-trigger:hover {
+            text-decoration: underline;
+        }
+
+        .inline-add-row {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .inline-add-row.show {
+            display: flex;
+        }
+
+        .inline-add-input {
+            flex: 1;
+        }
+
+        .inline-add-trigger.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="button-container">
+            <button id="viewFloorBtn" class="btn btn-primary mr-2">Tabel</button>
+            <button id="addEmployeeBtn" class="btn btn-success" data-toggle="modal" data-target="#addEmployeeModal">Lisa töötaja</button>
+        </div>
+        
+        <div id="floorTables"></div>
+
+        <div id="notification" class="notification"></div>
+    </div>
+
+    <div class="modal fade" id="addEmployeeModal" tabindex="-1" role="dialog" aria-labelledby="addEmployeeModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addEmployeeModalLabel">Lisa töötaja</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Sulge">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="addEmployeeForm">
+                        <div class="form-group">
+                            <label for="employeeName">Nimi ja Perekonnanimi</label>
+                            <input type="text" class="form-control" id="employeeName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="roomNumber">Kabineti №</label>
+                            <input type="text" class="form-control" id="roomNumber" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="profession">Eriala</label>
+                            <select class="form-control" id="profession"></select>
+
+                            <button type="button" class="inline-add-trigger" id="showProfessionFormBtn">
+                                + Lisa uus eriala
+                            </button>
+
+                            <div id="newProfessionInline" class="inline-add-row">
+                                <input
+                                    type="text"
+                                    class="form-control inline-add-input"
+                                    id="newProfessionInput"
+                                    placeholder="Sisesta uus eriala"
+                                >
+                                <button type="button" class="btn btn-success btn-sm" id="saveProfessionBtn">
+                                    Salvesta
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-sm" id="cancelProfessionBtn">
+                                    Tühista
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="workTeam">Hoone</label>
+                            <input type="text" class="form-control" id="workTeam" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="monday">Esmaspäev</label>
+                                    <input type="text" class="form-control" id="monday" placeholder="9:00 - 17:00">
+                                    <select class="form-control" id="mondayStatus">
+                                        <option value="">---</option>
+                                        <option value="PT">PT</option>
+                                        <option value="PS">PS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="tuesday">Teisipäev</label>
+                                    <input type="text" class="form-control" id="tuesday" placeholder="9:00 - 17:00">
+                                    <select class="form-control" id="tuesdayStatus">
+                                        <option value="">---</option>
+                                        <option value="PT">PT</option>
+                                        <option value="PS">PS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="wednesday">Kolmapäev</label>
+                                    <input type="text" class="form-control" id="wednesday" placeholder="9:00 - 17:00">
+                                    <select class="form-control" id="wednesdayStatus">
+                                        <option value="">---</option>
+                                        <option value="PT">PT</option>
+                                        <option value="PS">PS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="thursday">Neljapäev</label>
+                                    <input type="text" class="form-control" id="thursday" placeholder="9:00 - 17:00">
+                                    <select class="form-control" id="thursdayStatus">
+                                        <option value="">---</option>
+                                        <option value="PT">PT</option>
+                                        <option value="PS">PS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="friday">Reede</label>
+                                    <input type="text" class="form-control" id="friday" placeholder="9:00 - 17:00">
+                                    <select class="form-control" id="fridayStatus">
+                                        <option value="">---</option>
+                                        <option value="PT">PT</option>
+                                        <option value="PS">PS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="saturday">Laupäev</label>
+                                    <input type="text" class="form-control" id="saturday" placeholder="9:00 - 17:00">
+                                    <select class="form-control" id="saturdayStatus">
+                                        <option value="">---</option>
+                                        <option value="PT">PT</option>
+                                        <option value="PS">PS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="sunday">Pühapäev</label>
+                                    <input type="text" class="form-control" id="sunday" placeholder="9:00 - 17:00">
+                                    <select class="form-control" id="sundayStatus">
+                                        <option value="">---</option>
+                                        <option value="PT">PT</option>
+                                        <option value="PS">PS</option>
+                                    </select>
+                                </div>
+                            </div>                       
+                        </div>
+                        <button type="submit" class="btn btn-primary">Salvesta</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        function closeModalSafe() {
+            $('#addEmployeeModal').modal('hide');
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open');
+        }
+
+        $(document).ready(function () {
+            const currentId = getUrlParameter('id');
+            const floorNumber = parseInt(getUrlParameter('floorNumber'), 10);
+
+            $('#viewFloorBtn').on('click', function() {
+                const url = `/table.html?floor=${encodeURIComponent(workTeam)}&id=${encodeURIComponent(currentId)}&floorNumber=${encodeURIComponent(floorNumber)}`;
+                window.location.href = url;
+            });
+
+            const professions = [];
+
+            function updateProfessionList() {
+                const professionSelect = $('#profession');
+                professionSelect.empty();
+                professionSelect.append('<option value="">---</option>');
+
+                professions.forEach(function(profession) {
+                    professionSelect.append(
+                        `<option value="${profession.id}">${profession.name}</option>`
+                    );
+                });
+            }
+
+            async function loadProfessions() {
+                try {
+                    const response = await fetch('/api/profession');
+                    if (!response.ok) {
+                        throw new Error('Viga erialade laadimisel');
+                    }
+
+                    const data = await response.json();
+                    professions.length = 0;
+                    data.forEach(profession => professions.push(profession));
+                    updateProfessionList();
+                } catch (error) {
+                    console.error('Viga erialade laadimisel:', error);
+                }
+            }
+
+            loadProfessions();
+
+            document.getElementById('showProfessionFormBtn').addEventListener('click', () => {
+                const row = document.getElementById('newProfessionInline');
+                const input = document.getElementById('newProfessionInput');
+                const trigger = document.getElementById('showProfessionFormBtn');
+
+                row.classList.add('show');
+                trigger.classList.add('hidden');
+                input.value = '';
+                input.focus();
+            });
+
+            document.getElementById('cancelProfessionBtn').addEventListener('click', () => {
+                document.getElementById('newProfessionInline').classList.remove('show');
+                document.getElementById('newProfessionInput').value = '';
+                document.getElementById('showProfessionFormBtn').classList.remove('hidden');
+            });
+
+            document.getElementById('saveProfessionBtn').addEventListener('click', async () => {
+                const input = document.getElementById('newProfessionInput');
+                const trimmedProfession = input.value.trim();
+
+                if (!trimmedProfession) {
+                    showNotification('Eriala on tühi.', 'error');
+                    return;
+                }
+
+                const exists = professions.some(
+                    p => p.name.toLowerCase() === trimmedProfession.toLowerCase()
+                );
+
+                if (exists) {
+                    showNotification('Eriala on juba olemas.', 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/profession', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ name: trimmedProfession })
+                    });
+
+                    const createdProfession = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(createdProfession.error || createdProfession.message || 'Eriala lisamisel tekkis viga');
+                    }
+
+                    professions.push(createdProfession);
+                    updateProfessionList();
+                    $('#profession').val(String(createdProfession.id));
+
+                    document.getElementById('newProfessionInline').classList.remove('show');
+                    document.getElementById('newProfessionInput').value = '';
+                    document.getElementById('showProfessionFormBtn').classList.remove('hidden');
+                    showNotification('Eriala lisati edukalt!', 'success');
+                } catch (error) {
+                    showNotification(error.message, 'error');
+                }
+            });
+
+            const workTeam = getUrlParameter('floorName');
+
+            $('#workTeam').val(workTeam);
+            $('#workTeam').prop('readonly', true);
+
+            async function loadEmployees() {
+                try {
+                    const response = await fetch('/employees');
+                    const employees = await response.json().catch(() => []);
+
+                    if (!response.ok) {
+                        throw new Error('Viga töötajate laadimisel');
+                    }
+
+                    displayEmployees(filterEmployeesByFloor(employees, floorNumber, workTeam));
+                } catch (error) {
+                    showNotification('Viga töötajate laadimisel: ' + error.message, 'error');
+                }
+            }
+
+            function filterEmployeesByFloor(employees, floorNumber, workTeam) {
+                return employees.filter(employee => 
+                    employee.workTeam === workTeam && getFloorFromRoomNumber(employee.roomNumber) === floorNumber
+                );
+            }
+
+            function getFloorFromRoomNumber(roomNumber) {
+                const roomString = String(roomNumber);
+                const match = roomString.match(/^(\d)/);
+                return match ? parseInt(match[1]) : null;
+            }
+
+            function displayEmployees(employees) {
+                const floorTables = $('#floorTables');
+                floorTables.empty();
+                if (employees.length === 0) {
+                    floorTables.append('Kuvatavaid töötajaid pole');
+                    return;
+                }
+
+                employees.sort((a, b) => {
+                    const roomA = parseInt(a.roomNumber, 10);
+                    const roomB = parseInt(b.roomNumber, 10);
+                    return roomA - roomB;
+                });
+
+                const floorName = `Korrus ${floorNumber}`;
+                const table = `
+                    <h3>${floorName}</h3>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Perekonnanimi ja eesnimi</th>
+                                <th>Kabineti nr</th>
+                                <th>Eriala</th>
+                                <th>Esmaspäev</th>
+                                <th>Teisipäev</th>
+                                <th>Kolmapäev</th>
+                                <th>Neljapäev</th>
+                                <th>Reede</th>
+                                <th>Laupäev</th>
+                                <th>Pühapäev</th>
+                                <th>Tegevused</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${employees.map(employee => `
+                                <tr>
+                                    <td>${sanitizeInput(employee.firstName)}</td>
+                                    <td>${sanitizeInput(employee.roomNumber)}</td>
+                                    <td>${sanitizeInput(getProfessionNameById(employee.professionId))}</td>
+                                    <td>${employee.monday || ''} ${formatStatusBadge(employee.mondayStatus)}</td>
+                                    <td>${employee.tuesday || ''} ${formatStatusBadge(employee.tuesdayStatus)}</td>
+                                    <td>${employee.wednesday || ''} ${formatStatusBadge(employee.wednesdayStatus)}</td>
+                                    <td>${employee.thursday || ''} ${formatStatusBadge(employee.thursdayStatus)}</td>
+                                    <td>${employee.friday || ''} ${formatStatusBadge(employee.fridayStatus)}</td>
+                                    <td>${employee.saturday || ''} ${formatStatusBadge(employee.saturdayStatus)}</td>
+                                    <td>${employee.sunday || ''} ${formatStatusBadge(employee.sundayStatus)}</td>
+                                    <td><button class="btn btn-sm deleteBtn delete-btn" data-id="${employee.id}">Kustuta</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                floorTables.append(table);
+                attachEventHandlers();
+            }
+
+            function formatStatusBadge(status) {
+                if (status === 'PT') {
+                    return '<span class="badge badge-warning">PT</span>';
+                } 
+                if (status === 'PS') {
+                    return '<span class="badge badge-primary">PS</span>';
+                }
+
+                return '';
+            }
+
+            function sanitizeInput(input) {
+                const div = document.createElement('div');
+                div.textContent = input || '';
+                return div.innerHTML;
+            }
+
+            function getProfessionNameById(id) {
+                const profession = professions.find(p => Number(p.id) === Number(id));
+                return profession ? profession.name : '';
+            }
+
+            $('#addEmployeeForm').on('submit', async function (e) {
+                e.preventDefault();
+
+                const newEmployee = {
+                    firstName: $('#employeeName').val().trim(),
+                    roomNumber: parseInt($('#roomNumber').val(), 10),
+                    professionId: parseInt($('#profession').val(), 10),
+                    workTeam: $('#workTeam').val().trim(),
+
+                    monday: $('#monday').val().trim(),
+                    mondayStatus: $('#mondayStatus').val(),
+
+                    tuesday: $('#tuesday').val().trim(),
+                    tuesdayStatus: $('#tuesdayStatus').val(),
+
+                    wednesday: $('#wednesday').val().trim(),
+                    wednesdayStatus: $('#wednesdayStatus').val(),
+
+                    thursday: $('#thursday').val().trim(),
+                    thursdayStatus: $('#thursdayStatus').val(),
+
+                    friday: $('#friday').val().trim(),
+                    fridayStatus: $('#fridayStatus').val(),
+
+                    saturday: $('#saturday').val().trim(),
+                    saturdayStatus: $('#saturdayStatus').val(),
+
+                    sunday: $('#sunday').val().trim(),
+                    sundayStatus: $('#sundayStatus').val(),
+                };
+
+                if (!newEmployee.firstName || Number.isNaN(newEmployee.roomNumber) || Number.isNaN(newEmployee.professionId) || !newEmployee.workTeam) {
+                    showNotification('Täida kõik kohustuslikud väljad', 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/employees', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(newEmployee)
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        throw new Error(data.error || data.message || 'Viga töötaja lisamisel');
+                    }
+
+                    closeModalSafe();
+                    $('#addEmployeeForm')[0].reset();
+                    $('#workTeam').val(workTeam);
+                    showNotification('Töötaja lisamine õnnestus', 'success');
+                    loadEmployees();
+                } catch (error) {
+                    showNotification(error.message, 'error');
+                    console.error('Viga töötaja lisamisel:', error);
+                }
+            });
+
+            function showNotification(message, type) {
+                const notification = $('#notification');
+                notification.removeClass('bg-success bg-danger').addClass(type === 'success' ? 'bg-success' : 'bg-danger');
+                notification.text(message);
+                notification.fadeIn();
+
+                setTimeout(() => {
+                    notification.fadeOut();
+                }, 3000);
+            }
+
+            async function deleteEmployee(employeeId) {
+                try {
+                    const response = await fetch(`/employees/${employeeId}`, {
+                        method: 'DELETE',
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Viga töötaja kustutamisel');
+                    }
+
+                    showNotification('Töötaja kustutamine õnnestus', 'success');
+                    loadEmployees();
+                } catch (error) {
+                    showNotification('Viga töötaja kustutamisel: ' + error.message, 'error');
+                }
+            }
+
+            function attachEventHandlers() {
+                $('.deleteBtn').on('click', function () {
+                    const employeeId = $(this).data('id');
+                    if (confirm('Kas olete kindel, et soovite töötaja kustutada?')) {
+                        deleteEmployee(employeeId);
+                    }
+                });
+            }
+
+            loadEmployees();
+        });
+    </script>
+</body>
+</html>
