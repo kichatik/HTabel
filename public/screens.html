@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korruste haldamine</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #ffffff; 
+            color: black; 
+            padding: 20px;
+        }
+        .tabs {
+            display: flex;
+            align-items: center;
+        }
+        #tabContainer {
+            display: flex;
+        }
+        .tab {
+            margin-right: 15px;
+            padding: 10px;
+            border: 1px solid transparent;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .tab.active {
+            background-color: gray;
+            color: black;
+        }
+        .tab a {
+            text-decoration: none;
+            color: black;
+        }
+        .button-container {
+            margin-left: auto;
+        }
+        .btn-custom {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+        .container {
+            background: transparent;
+            padding: 0;
+            margin: 0 auto;
+            max-width: 800px;
+        }
+
+        #floorsContainer {
+            display: flex;
+            flex-direction: column; /* ВАЖНО: секции в столбик */
+        }
+
+        .floor-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            justify-content: flex-start;
+        }
+        .floor-button {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #007bff;
+            border-radius: 5px;
+            background-color: white;
+            color: #007bff;
+            cursor: pointer;
+            flex: 1 0 150px;
+            max-width: 200px;
+        }
+        .floor-button:hover {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="tabs">
+            <div id="tabContainer">
+                <div class="tab"><a href="index.html">Korrused</a></div>
+                <div class="tab active">Ekraanid</div>
+                <div class="tab"><a href="admin.html">Admin</a></div>
+            </div>
+        </div>
+        <div class="button-container">
+            <button id="selectFloorsBtn" class="btn btn-custom ml-2">Lisa korrus</button>
+            <button id="logoutBtn" class="btn btn-custom ml-2" style="background-color: #007bff;">Logi välja</button>
+        </div>
+    </div>
+
+    <!-- Секция для отображения кнопок этажей -->
+    <div class="container">
+        <div id="floorsContainer" class="floor-buttons"></div>
+    </div>
+
+    <!-- Модальное окно для выбора этажей -->
+    <div class="modal fade" id="floorSelectionModal" tabindex="-1" aria-labelledby="floorSelectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="floorSelectionModalLabel">Valige kuvamiseks korrused</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="floorSelectionForm">
+                        <!-- Сюда будут добавлены чекбоксы для этажей -->
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tühista</button>
+                    <button type="button" class="btn btn-primary" id="saveSelectionBtn">Salvesta</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+
+        // Обработчик события для кнопки "Выход"
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            window.location.href = 'login.html';
+        });
+
+        // Обработчик события для кнопки "Выбрать этажи"
+        document.getElementById('selectFloorsBtn').addEventListener('click', () => {
+            fetchFloorsForSelection();
+            $('#floorSelectionModal').modal('show');
+        });
+
+        // Функция для загрузки этажей в модальное окно
+        function fetchFloorsForSelection() {
+            fetch('/api/floors') // Запрос на API для получения этажей
+                .then(response => {
+                    if (!response.ok) throw new Error('Ошибка при получении этажей');
+                    return response.json();
+                })
+                .then(floors => {
+                    const form = document.getElementById('floorSelectionForm');
+                    form.innerHTML = ''; // Очищаем форму перед добавлением данных
+
+                    // Перебираем этажи и добавляем чекбоксы для выбора
+                    floors.forEach(floor => {
+                        const div = document.createElement('div');
+                        div.className = 'form-check';
+
+                        const input = document.createElement('input');
+                        input.className = 'form-check-input';
+                        input.type = 'checkbox';
+                        input.id = `floor-${floor.id}`;
+                        input.value = floor.id;
+
+                        const label = document.createElement('label');
+                        label.className = 'form-check-label';
+                        label.htmlFor = `floor-${floor.id}`;
+                        label.textContent = `${floor.floorNumber} - ${floor.floorName}`;
+
+                        div.appendChild(input);
+                        div.appendChild(label);
+                        form.appendChild(div);
+                    });
+
+                    // Загружаем ранее выбранные этажи из локального хранилища
+                    const selectedFloors = JSON.parse(localStorage.getItem('selectedFloors') || '[]');
+                    selectedFloors.forEach(floorId => {
+                        const checkbox = document.getElementById(`floor-${floorId}`);
+                        if (checkbox) checkbox.checked = true;
+                    });
+                })
+                .catch(error => console.error('Ошибка при загрузке этажей:', error));
+        }
+
+        // Обработчик события для кнопки "Сохранить" в модальном окне
+        document.getElementById('saveSelectionBtn').addEventListener('click', () => {
+            const selectedFloors = Array.from(document.querySelectorAll('#floorSelectionForm input:checked'))
+                .map(input => input.value);
+
+            // Сохраняем выбранные этажи в локальном хранилище
+            localStorage.setItem('selectedFloors', JSON.stringify(selectedFloors));
+
+            // Закрываем модальное окно
+            $('#floorSelectionModal').modal('hide');
+
+            // Выполните действия с выбранными этажами, например, отобразите их
+            displaySelectedFloors(selectedFloors);
+        });
+
+        // Функция для отображения выбранных этажей
+        function displaySelectedFloors(floorIds) {
+            fetch('/api/floors')
+                .then(response => {
+                    if (!response.ok) throw new Error('Ошибка при получении этажей');
+                    return response.json();
+                })
+                .then(floors => {
+                    const container = document.getElementById('floorsContainer');
+                    container.innerHTML = '';
+
+                    const floorSections = {};
+
+                    floors.forEach(floor => {
+                        if (!floorIds.includes(floor.id.toString())) {
+                            return;
+                        }
+
+                        if (!floorSections[floor.floorName]) {
+                            const sectionDiv = document.createElement('div');
+                            sectionDiv.className = 'floor-section';
+                            sectionDiv.innerHTML = `
+                                <h3>${floor.floorName}</h3>
+                                <div class="floor-buttons"></div>
+                            `;
+                            floorSections[floor.floorName] = sectionDiv.querySelector('.floor-buttons');
+                            container.appendChild(sectionDiv);
+                        }
+
+                        const floorDiv = document.createElement('div');
+                        floorDiv.className = 'floor-button';
+                        floorDiv.textContent = `${floor.floorNumber} - ${floor.floorName}`;
+
+                        floorDiv.addEventListener('click', () => {
+                            window.location.href = `table.html?floor=${encodeURIComponent(floor.floorName)}&id=${encodeURIComponent(floor.id)}&floorNumber=${encodeURIComponent(floor.floorNumber)}`;
+                        });
+
+                        floorSections[floor.floorName].appendChild(floorDiv);
+                    });
+                })
+                .catch(error => console.error('Ошибка при загрузке этажей:', error));
+        }
+
+        // Загружаем и отображаем выбранные этажи при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            const selectedFloors = JSON.parse(localStorage.getItem('selectedFloors') || '[]');
+            displaySelectedFloors(selectedFloors);
+        });
+    </script>
+</body>
+</html>
