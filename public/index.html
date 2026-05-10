@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korruste haldamine</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+
+        .header {
+            display: flex;
+            align-items: center; 
+            justify-content: space-between; 
+            background-color: #ffffff; 
+            color: black; 
+            padding: 20px; 
+        }
+
+        .tabs {
+            display: flex; 
+            align-items: center; 
+        }
+
+        #tabContainer {
+            display: flex; 
+        }
+
+        .tab {
+            margin-right: 15px; 
+            padding: 10px; 
+            border: 1px solid transparent; 
+            border-radius: 5px; 
+            cursor: pointer; 
+        }
+
+        .tab.active {
+            background-color: gray; 
+            color: black; 
+        }
+
+        .tab a {
+            text-decoration: none; 
+            color: black; 
+        }
+
+        .button-container {
+            margin-left: auto; 
+        }
+
+        #createFloorBtn {
+            margin-left: 10px; 
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        .btn-custom {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+
+        .container {
+            background: transparent;
+            padding: 20px 0 0;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .floor-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            justify-content: flex-start;
+        }
+
+        .floor-button {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #007bff;
+            border-radius: 5px;
+            background-color: white;
+            color: #007bff;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex: 1 0 150px;
+            max-width: 200px;
+        }
+
+        .floor-button:hover {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .notification {
+            display: none; 
+            position: fixed; 
+            top: 20px; 
+            left: 50%;
+            transform: translateX(-50%); 
+            color: white; 
+            padding: 15px;
+            border-radius: 5px; 
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .notification.error { 
+            background-color: #dc3545; 
+        }
+
+        .notification.success { 
+            background-color: #28a745; 
+        }
+
+        .modal {
+            display: none; position: fixed; z-index: 1;
+            left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: white; margin: 15% auto; padding: 20px;
+            border: 1px solid #888; width: 400px; border-radius: 8px;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+            color: #aaa;
+            font-size: 20px;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .edit-icon, .delete-icon {
+            color: #007bff;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .logout-btn {
+            background-color: #007bff;
+        }
+
+        .modal-content {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="tabs">
+            <div id="tabContainer">
+                <div class="tab active">Korrused</div>
+                <div class="tab"><a href="screens.html">Ekraanid</a></div>
+                <div class="tab"><a href="admin.html">Admin</a></div>
+            </div>
+        </div>
+        <div class="button-container">
+            <button id="createFloorBtn" class="btn btn-custom">Lisa korrus</button>
+            <button id="logoutBtn" class="btn btn-custom logout-btn ml-2">Logi välja</button>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <div id="floorModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">Lisa korrus</h2>
+            <label for="floorNumber">Korruse number:</label>
+            <input type="text" id="floorNumber" class="form-control mb-3">
+            <label for="floorName">Korruse nimi:</label>
+            <input type="text" id="floorName" class="form-control mb-3">
+            <button id="saveFloorBtn" class="btn btn-custom">Salvesta</button>
+        </div>
+    </div>
+
+    <div class="container" id="floorsContainer"></div> 
+
+    <script>
+        
+        let currentFloorId = null; 
+
+        document.getElementById('createFloorBtn').addEventListener('click', openModal);
+        
+        document.querySelector('.close').addEventListener('click', closeModal);
+
+        document.getElementById('saveFloorBtn').addEventListener('click', () => {
+            const floorNumber = document.getElementById('floorNumber').value.trim();
+            const floorName = document.getElementById('floorName').value.trim();
+
+            if (!floorNumber || !floorName) {
+                showNotification('Vajalik on korruse number ja nimi!', 'error');
+                return;
+            }
+
+            const isEdit = !!currentFloorId;
+            const method = isEdit ? 'PUT' : 'POST';
+            const url = isEdit
+                ? `/api/floors/${encodeURIComponent(currentFloorId)}`
+                : '/api/floors';
+
+            fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ floorNumber: Number(floorNumber), floorName }),
+            })
+            .then(async response => {
+                const data = await response.json().catch(() => ({}));
+
+                if (response.status === 409) {
+                    throw new Error(data.message || 'Sama numbriga korrus on juba olemas');
+                }
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Viga korruse salvestamisel');
+                }
+
+                return data;
+            })
+            .then(() => {
+                showNotification(
+                    isEdit ? 'Korrus on edukalt uuendatud!' : 'Korrus lisati edukalt!',
+                    'success'
+                );
+                closeModal();
+                fetchFloors();
+            })
+            .catch(error => {
+                showNotification(error.message, 'error');
+                console.error('Viga:', error);
+            });
+        });
+
+        function editFloor(id, floorNumber, floorName) {
+            currentFloorId = id;
+            document.getElementById('modalTitle').textContent = 'Redigeeri korrust';
+            document.getElementById('floorNumber').value = floorNumber;
+            document.getElementById('floorName').value = floorName;
+            document.getElementById('floorModal').style.display = 'block';
+        }
+
+        function openModal() {
+            currentFloorId = null;
+            document.getElementById('modalTitle').textContent = 'Lisa korrus';
+            document.getElementById('floorNumber').value = '';
+            document.getElementById('floorName').value = '';
+            document.getElementById('floorModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('floorModal').style.display = 'none';
+            currentFloorId = null;
+        }
+
+        function fetchFloors() {
+            fetch('/api/floors')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Viga korruste hankimisel');
+                    }
+                    return response.json();
+                })
+                .then(floors => {
+                    const container = document.getElementById('floorsContainer'); 
+                    container.innerHTML = ''; 
+
+                    const floorSections = {};
+
+                    floors.forEach(floor => {
+                        if (!floorSections[floor.floorName]) {
+                            const sectionDiv = document.createElement('div');
+                            sectionDiv.className = 'floor-section';
+                            sectionDiv.innerHTML = `<h3>${floor.floorName} korrused</h3><div class="floor-buttons"></div>`;
+                            floorSections[floor.floorName] = sectionDiv.querySelector('.floor-buttons');
+                            container.appendChild(sectionDiv);
+                        }
+
+                        const floorDiv = document.createElement('div');
+                        floorDiv.className = 'floor-button';
+                        floorDiv.innerHTML = `
+                            ${floor.floorNumber} - ${floor.floorName}
+                            <span class="edit-icon" onclick="editFloor('${floor.id}', '${floor.floorNumber}', '${floor.floorName}')">✏️</span>
+                            <span class="delete-icon" onclick="deleteFloor('${floor.id}')">🗑️</span>
+                        `;
+
+                        floorDiv.dataset.floorNumber = floor.floorNumber;
+                        floorDiv.dataset.floorName = floor.floorName;
+
+                        floorDiv.addEventListener('click', (event) => {
+                            if (event.target.closest('.edit-icon') || event.target.closest('.delete-icon')) {
+                                return;
+                            }
+
+                            const url = `/floor_details.html?floorName=${encodeURIComponent(floor.floorName)}&id=${encodeURIComponent(floor.id)}&floorNumber=${encodeURIComponent(floor.floorNumber)}`;
+                            window.location.href = url;
+                        });
+
+                        floorSections[floor.floorName].appendChild(floorDiv);
+                    });
+                })
+                .catch(error => console.error('Viga korruste laadimisel:', error));
+        }
+
+        function deleteFloor(id) {
+            if (confirm('Kas olete kindel, et soovite selle korruse kustutada?')) {
+                fetch(`/api/floors/${encodeURIComponent(id)}`, {
+                    method: 'DELETE',
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            throw new Error('Korrust ei leitud');
+                        } else if (response.status === 500) {
+                            throw new Error('Serveri viga. Proovige hiljem uuesti.');
+                        } else {
+                            throw new Error('Viga korruse kustutamisel');
+                        }
+                    }
+                    showNotification('Korruse kustutamine õnnestus!', 'success');
+                    fetchFloors(); 
+                })
+                .catch(error => {
+                    showNotification(error.message, 'error'); 
+                });
+            }
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await fetch('/api/users/logout', {
+                    method: 'POST'
+                });
+            } catch (error) {
+                console.error('Viga väljalogimisel:', error);
+            }
+
+            window.location.href = 'login.html';
+        });
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block'; 
+            setTimeout(() => {
+                notification.textContent = '';
+                notification.className = 'notification';
+                notification.style.display = 'none'; 
+            }, 3000);
+        }
+
+        fetchFloors();
+    </script>
+</body>
+</html>
