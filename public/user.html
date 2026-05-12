@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korruste haldamine</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+
+        .header {
+            display: flex;
+            align-items: center; 
+            justify-content: space-between; 
+            background-color: #ffffff; 
+            color: black; 
+            padding: 20px; 
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+
+        .booking-btn:hover {
+            color: #000;
+        }
+
+        .tabs {
+            display: flex; 
+            align-items: center; 
+        }
+
+        #tabContainer {
+            display: flex; 
+        }
+
+        .tab {
+            margin-right: 15px; 
+            padding: 10px; 
+            border: 1px solid transparent; 
+            border-radius: 5px; 
+            cursor: pointer; 
+        }
+
+        .tab.active {
+            background-color: gray; 
+            color: black; 
+        }
+
+        .button-container {
+            margin-left: auto; 
+        }
+
+        .btn-custom {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+
+        .container {
+            background: transparent;
+            padding: 20px 0 0;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .notification {
+            display: none; 
+            position: fixed; 
+            top: 20px; 
+            left: 50%;
+            transform: translateX(-50%); 
+            color: white; 
+            padding: 15px;
+            border-radius: 5px; 
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .notification.error { 
+            background-color: #dc3545; 
+        }
+
+        .notification.success { 
+            background-color: #28a745; 
+        }
+
+        .modal {
+            display: none; position: fixed; z-index: 1;
+            left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 400px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+            color: #aaa;
+            font-size: 20px;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .logout-btn {
+            background-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="tabs">
+            <div id="tabContainer">
+                <div class="tab active">Broneerimine</div>
+            </div>
+        </div>
+        <div class="button-container">
+            <button id="openBookingBtn" class="btn btn-success ml-2 booking-btn">Broneeri aeg</button>
+            <button id="logoutBtn" class="btn btn-custom logout-btn ml-2">Logi välja</button>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+
+            <h3>Broneeri aeg</h3>
+
+            <label>Pantsiendi nimi ja perekonna-</label>
+            <input type="text" id="patientName" class="form-control">
+
+            <label>Arst</label>
+            <select id="doctorSelect" class="form-control"></select>
+
+            <label>Kuupäev</label>
+            <input type="date" id="date" class="form-control">
+
+            <label>Aeg</label>
+            <input type="time" id="time" class="form-control">
+
+            <button class="btn btn-success mt-3" onclick="saveBooking()">
+                Kinnita
+            </button>
+        </div>
+    </div>
+
+    <div class="container" id="appointmentsContainer"></div>
+
+<script>
+    async function loadAppointments() {
+        try {
+            const res = await fetch('/api/appointments/my');
+
+            if (!res.ok) {
+                console.error('Ошибка загрузки:', res.status);
+                return;
+            }
+
+            const appointments = await res.json();
+
+            const container = document.getElementById('appointmentsContainer');
+            container.innerHTML = '';
+
+            if (!appointments.length) {
+                container.innerHTML = '<p>Broneeringuid pole</p>';
+                return;
+            }
+
+            appointments.forEach(app => {
+                const card = document.createElement('div');
+                card.className = 'card p-3 mb-2';
+
+                card.innerHTML = `
+                    <b>Arst:</b> ${app.employee?.firstName || ''} ${app.employee?.lastName || ''}<br>
+                    <b>Kuupäev:</b> ${app.appointment_date}<br>
+                    <b>Aeg:</b> ${app.appointment_time?.slice(0, 5)}<br>
+                    <b>Staatus:</b> ${app.status}
+                `;
+
+                container.appendChild(card);
+            });
+
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    loadAppointments();
+
+    async function loadDoctors() {
+        try {
+            const res = await fetch('/api/employees');
+            const doctors = await res.json();
+
+            const select = document.getElementById('doctorSelect');
+            select.innerHTML = '<option value="">Выберите врача</option>';
+
+            const unique = Array.from(
+                new Map(doctors.map(d => [d.id, d])).values()
+            );
+
+            unique.forEach(doc => {
+                const option = document.createElement('option');
+
+                option.value = doc.id;
+
+                option.textContent = `${doc.firstName || ''} ${doc.lastName || ''}`;
+
+                select.appendChild(option);
+            });
+
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    document.getElementById('openBookingBtn').addEventListener('click', async () => {
+        setMinDate();
+        await loadDoctors();
+        document.getElementById('bookingModal').style.display = 'block';
+    });
+
+    function closeModal() {
+        document.getElementById('bookingModal').style.display = 'none';
+    }
+
+    function setMinDate() {
+        const dateInput = document.getElementById('date');
+
+        const today = new Date().toISOString().split('T')[0];
+
+        dateInput.min = today;   
+        dateInput.value = today; 
+    }
+
+    async function saveBooking() {
+        const patientName = document.getElementById('patientName').value;
+        const date = document.getElementById('date').value;
+        const time = document.getElementById('time').value;
+        const employeeId = document.getElementById('doctorSelect').value;
+
+        if (!patientName || !employeeId || !date || !time) {
+            showNotification('Täida kõik väljad', 'error');
+            return;
+        }
+
+        const res = await fetch('/api/appointments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                appointment_date: date,
+                appointment_time: time,
+                employee_id: Number(employeeId),
+                patient_name: patientName
+            })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            showNotification('Broneering on loodud!', 'success');
+            closeModal();
+            await loadAppointments();
+        } else {
+            showNotification(data.message || data.error || 'Error', 'error');
+        }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        try {
+            await fetch('/api/users/logout', {
+                method: 'POST'
+            });
+        } catch (error) {
+            console.error('Viga väljalogimisel:', error);
+        }
+
+        window.location.href = 'login.html';
+        });
+
+    function showNotification(message, type) {
+        const notification = document.getElementById('notification');
+
+        notification.textContent = message;
+        notification.className = 'notification ' + type;
+        notification.style.display = 'block';
+
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    }
+</script>
+</body>
+</html>

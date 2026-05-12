@@ -345,7 +345,7 @@
 
             async function loadEmployees() {
                 try {
-                    const response = await fetch('/employees');
+                    const response = await fetch('/api/employees');
                     const employees = await response.json().catch(() => []);
 
                     if (!response.ok) {
@@ -485,7 +485,7 @@
                 }
 
                 try {
-                    const response = await fetch('/employees', {
+                    const response = await fetch('/api/employees', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -523,7 +523,7 @@
 
             async function deleteEmployee(employeeId) {
                 try {
-                    const response = await fetch(`/employees/${employeeId}`, {
+                    const response = await fetch(`/api/employees/${employeeId}`, {
                         method: 'DELETE',
                     });
 

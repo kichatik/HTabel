@@ -10,6 +10,7 @@ const userRoutes = require('./routes/userRoutes');
 const floorRoutes = require('./routes/floorRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
 const professionRoutes = require('./routes/professionRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
 
 const app = express();
 
@@ -29,8 +30,10 @@ userRoutes(app);
 floorRoutes(app);
 employeeRoutes(app);
 professionRoutes(app);
+appointmentRoutes(app);
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/img', express.static(path.join(__dirname, 'img')));
 
 app.get('/', (req, res) => {
     res.redirect('/login.html');
