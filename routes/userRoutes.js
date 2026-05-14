@@ -11,6 +11,7 @@ module.exports = app => {
     
     router.get('/me', userController.me);
 
+    router.post('/register', userController.register);
     // Admin
     router.post('/admin/users', userController.createUserByAdmin);
 

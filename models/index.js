@@ -4,9 +4,15 @@ const Floor = require('./floor');
 const Appointment = require('./appointment');
 const User = require('./user'); 
 
-Employee.belongsTo(Profession, { foreignKey: 'professionId', as: 'profession' });
+Employee.belongsTo(Profession, { 
+    foreignKey: 'professionId', 
+    as: 'profession' 
+});
 
-Profession.hasMany(Employee, { foreignKey: 'professionId', as: 'employees' });
+Profession.hasMany(Employee, { 
+    foreignKey: 'professionId', 
+    as: 'employees' 
+});
 
 User.hasMany(Appointment, { foreignKey: 'user_id' });
 Appointment.belongsTo(User, { foreignKey: 'user_id' });

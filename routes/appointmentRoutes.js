@@ -8,6 +8,8 @@ module.exports = app => {
 
     router.get('/my', appointmentController.getMyAppointments);
 
+    router.delete('/:id', appointmentController.deleteById);
+
     router.put('/cancel/:id', appointmentController.cancelAppointment);
 
     app.use('/api/appointments', router);

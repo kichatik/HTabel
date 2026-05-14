@@ -31,7 +31,8 @@ exports.createAppointment = async (req, res) => {
             where: {
                 employee_id,
                 appointment_date,
-                appointment_time
+                appointment_time,
+                status: 'bookitud'
             }
         });
 
@@ -117,6 +118,34 @@ exports.getMyAppointments = async (req, res) => {
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: 'Server error' });
+    }
+};
+
+exports.deleteById = async (req, res) => {
+    try {
+        const userId = req.session.user.id; // или req.user.id если JWT
+        const appointmentId = req.params.id;
+
+        const appointment = await Appointment.findByPk(appointmentId);
+
+        if (!appointment) {
+            return res.status(404).json({ message: 'Broneeringut ei leitud' });
+        }
+
+        // ❗ главное правило безопасности
+        if (appointment.user_id !== userId) {
+            return res.status(403).json({
+                message: 'Sul pole õigust seda broneeringut kustutada'
+            });
+        }
+
+        await appointment.destroy();
+
+        res.json({ message: 'Broneering kustutatud' });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
     }
 };
 

@@ -60,6 +60,11 @@
             color: black; 
         }
 
+        .tab a {
+            text-decoration: none; 
+            color: black; 
+        }
+
         .button-container {
             margin-left: auto; 
         }
@@ -141,6 +146,7 @@
         <div class="tabs">
             <div id="tabContainer">
                 <div class="tab active">Broneerimine</div>
+                <div class="tab"><a href="schedule.html">Ajakava</a></div>
             </div>
         </div>
         <div class="button-container">
@@ -169,6 +175,12 @@
             <label>Aeg</label>
             <select id="time" class="form-control"></select>
 
+            <label class="mt-2">
+                <input type="checkbox" id="consent">
+                Nõustun isikuandmete töötlemisega
+            </label>
+
+
             <button class="btn btn-success mt-3" onclick="saveBooking()">
                 Kinnita
             </button>
@@ -180,7 +192,9 @@
 <script>
     async function loadAppointments() {
         try {
-            const res = await fetch('/api/appointments/my');
+            const res = await fetch('/api/appointments/my', {
+                credentials: 'include'
+            });
 
             if (!res.ok) {
                 console.error('Ошибка загрузки:', res.status);
@@ -205,7 +219,12 @@
                     <b>Arst:</b> ${app.employee?.firstName || ''} ${app.employee?.lastName || ''}<br>
                     <b>Kuupäev:</b> ${app.appointment_date}<br>
                     <b>Aeg:</b> ${app.appointment_time?.slice(0, 5)}<br>
-                    <b>Staatus:</b> ${app.status}
+                    <b>Staatus:</b> ${app.status}<br>
+
+                    <button class="btn btn-sm btn-danger mt-2"
+                        onclick="cancelAppointment(${app.id})">
+                        Tühista
+                    </button>
                 `;
 
                 container.appendChild(card);
@@ -218,9 +237,33 @@
 
     loadAppointments();
 
+    async function cancelAppointment(id) {
+        try {
+            const res = await fetch(`/api/appointments/cancel/${id}`, {
+                method: 'PUT',
+                credentials: 'include'
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showNotification(data.message || 'Error', 'error');
+                return;
+            }
+
+            showNotification('Broneering tühistatud', 'success');
+            loadAppointments();
+
+        } catch (err) {
+            showNotification('Server error', 'error');
+        }
+    }
+
     async function loadDoctors() {
         try {
-            const res = await fetch('/api/employees');
+            const res = await fetch('/api/employees', {
+                credentials: 'include'
+            });
             const doctors = await res.json();
 
             const select = document.getElementById('doctorSelect');
@@ -286,7 +329,9 @@
 
         try {
             // Получаем все записи врача на выбранную дату
-            const res = await fetch(`/api/appointments?employee_id=${doctorId}&date=${date}`);
+            const res = await fetch(`/api/appointments?employee_id=${doctorId}&date=${date}`, {
+                credentials: 'include'
+            });
             const appointments = await res.json();
 
             // Занятые времена
@@ -335,13 +380,21 @@
         const time = document.getElementById('time').value;
         const employeeId = document.getElementById('doctorSelect').value;
 
+        const consent = document.getElementById('consent').checked;
+
         if (!patientName || !employeeId || !date || !time) {
             showNotification('Täida kõik väljad', 'error');
             return;
         }
 
+        if (!consent) {
+            showNotification('Peate nõustuma andmete töötlemisega', 'error');
+            return;
+        }
+
         const res = await fetch('/api/appointments', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 appointment_date: date,
