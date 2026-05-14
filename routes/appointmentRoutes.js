@@ -4,6 +4,8 @@ module.exports = app => {
 
     router.post('/', appointmentController.createAppointment);
 
+    router.get('/', appointmentController.getAppointmentsByDoctorAndDate);
+
     router.get('/my', appointmentController.getMyAppointments);
 
     router.put('/cancel/:id', appointmentController.cancelAppointment);

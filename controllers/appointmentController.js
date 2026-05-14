@@ -61,6 +61,35 @@ exports.createAppointment = async (req, res) => {
     }
 };
 
+exports.getAppointmentsByDoctorAndDate = async (req, res) => {
+    try {
+        const { employee_id, date } = req.query;
+
+        if (!employee_id || !date) {
+            return res.status(400).json({
+                message: 'Puudub employee_id või date'
+            });
+        }
+
+        const appointments = await Appointment.findAll({
+            where: {
+                employee_id,
+                appointment_date: date,
+                status: 'bookitud'
+            }
+        });
+
+        return res.json(appointments);
+
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+            message: 'Serveri viga'
+        });
+    }
+};
+
 exports.getMyAppointments = async (req, res) => {
     try {
         if (!req.session.user) {

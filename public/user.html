@@ -167,7 +167,7 @@
             <input type="date" id="date" class="form-control">
 
             <label>Aeg</label>
-            <input type="time" id="time" class="form-control">
+            <select id="time" class="form-control"></select>
 
             <button class="btn btn-success mt-3" onclick="saveBooking()">
                 Kinnita
@@ -230,15 +230,18 @@
                 new Map(doctors.map(d => [d.id, d])).values()
             );
 
-            unique.forEach(doc => {
+           unique.forEach(doc => {
                 const option = document.createElement('option');
 
                 option.value = doc.id;
 
-                option.textContent = `${doc.firstName || ''} ${doc.lastName || ''}`;
+                option.textContent =
+                    `${doc.firstName || ''} ${doc.lastName || ''}`;
 
                 select.appendChild(option);
             });
+
+            select.value = '';
 
         } catch (err) {
             console.error(err);
@@ -246,22 +249,84 @@
     }
 
     document.getElementById('openBookingBtn').addEventListener('click', async () => {
-        setMinDate();
+
+        document.getElementById('patientName').value = '';
+        document.getElementById('time').innerHTML = '';
+
         await loadDoctors();
+        await setMinDate();
+
         document.getElementById('bookingModal').style.display = 'block';
     });
+
+    const availableTimes = [
+        '09:00',
+        '09:30',
+        '10:00',
+        '10:30',
+        '11:00',
+        '11:30',
+        '12:00',
+        '12:30',
+        '13:00',
+        '13:30',
+        '14:00',
+        '14:30',
+        '15:00',
+        '15:30',
+        '16:00'
+    ];
+
+    async function loadAvailableTimes() {
+        const doctorId = document.getElementById('doctorSelect').value;
+        const date = document.getElementById('date').value;
+        const timeSelect = document.getElementById('time');
+
+        if (!doctorId || !date) return;
+
+        try {
+            // Получаем все записи врача на выбранную дату
+            const res = await fetch(`/api/appointments?employee_id=${doctorId}&date=${date}`);
+            const appointments = await res.json();
+
+            // Занятые времена
+            const busyTimes = appointments.map(app =>
+                app.appointment_time.slice(0, 5)
+            );
+
+            timeSelect.innerHTML =
+                '<option value="">Vali aeg</option>';
+
+            availableTimes.forEach(time => {
+                if (!busyTimes.includes(time)) {
+
+                    const option = document.createElement('option');
+
+                    option.value = time;
+                    option.textContent = time;
+
+                    timeSelect.appendChild(option);
+                }
+            });
+
+        } catch (err) {
+            console.error(err);
+        }
+    }
 
     function closeModal() {
         document.getElementById('bookingModal').style.display = 'none';
     }
 
-    function setMinDate() {
+    async function setMinDate() {
         const dateInput = document.getElementById('date');
 
         const today = new Date().toISOString().split('T')[0];
 
-        dateInput.min = today;   
-        dateInput.value = today; 
+        dateInput.min = today;
+        dateInput.value = today;
+
+        await loadAvailableTimes();
     }
 
     async function saveBooking() {
@@ -307,7 +372,13 @@
         }
 
         window.location.href = 'login.html';
-        });
+    });
+
+    document.getElementById('doctorSelect')
+        .addEventListener('change', loadAvailableTimes);
+
+    document.getElementById('date')
+        .addEventListener('change', loadAvailableTimes);
 
     function showNotification(message, type) {
         const notification = document.getElementById('notification');
