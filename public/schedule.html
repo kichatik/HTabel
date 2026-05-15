@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Korruste haldamine</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             font-family: Arial, sans-serif;
@@ -18,43 +17,28 @@
 
         .header {
             display: flex;
-            align-items: center; 
-            justify-content: space-between; 
-            background-color: #ffffff; 
-            color: black; 
-            padding: 20px; 
+            align-items: center;
+            justify-content: space-between;
+            background-color: #ffffff;
+            padding: 20px;
         }
 
-        .tabs {
-            display: flex; 
-            align-items: center; 
-        }
+        .tabs { display: flex; align-items: center; }
 
-        #tabContainer {
-            display: flex; 
-        }
+        #tabContainer { display: flex; }
 
         .tab {
-            margin-right: 15px; 
-            padding: 10px; 
-            border: 1px solid transparent; 
-            border-radius: 5px; 
-            cursor: pointer; 
+            margin-right: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
         }
 
-        .tab.active {
-            background-color: gray; 
-            color: black; 
-        }
+        .tab.active { background: gray; }
 
-        .tab a {
-            text-decoration: none; 
-            color: black; 
-        }
+        .tab a { text-decoration: none; color: black; }
 
-        .button-container {
-            margin-left: auto; 
-        }
+        .button-container { margin-left: auto; }
 
         .btn-custom {
             background-color: #28a745;
@@ -62,64 +46,12 @@
             border: none;
             border-radius: 5px;
             padding: 10px 15px;
-            cursor: pointer;
         }
 
         .container {
-            background: transparent;
-            padding: 20px 0 0;
-            width: 100%;
             max-width: 800px;
             margin: 0 auto;
-        }
-
-        .notification {
-            display: none; 
-            position: fixed; 
-            top: 20px; 
-            left: 50%;
-            transform: translateX(-50%); 
-            color: white; 
-            padding: 15px;
-            border-radius: 5px; 
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-        }
-
-        .notification.error { 
-            background-color: #dc3545; 
-        }
-
-        .notification.success { 
-            background-color: #28a745; 
-        }
-
-        .modal {
-            display: none; position: fixed; z-index: 1;
-            left: 0; top: 0; width: 100%; height: 100%;
-            overflow: auto; background-color: rgba(0, 0, 0, 0.5);
-        }
-        .modal-content {
-            position: relative;
-            background-color: white; margin: 15% auto; padding: 20px;
-            border: 1px solid #888; width: 400px; border-radius: 8px;
-        }
-
-        .close {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            cursor: pointer;
-            color: #aaa;
-            font-size: 20px;
-        }
-
-        .close:hover {
-            color: #000;
-        }
-
-        .logout-btn {
-            background-color: #007bff;
+            padding: 20px;
         }
 
         .doctor-card {
@@ -145,9 +77,9 @@
         .slot {
             padding: 6px 10px;
             border-radius: 6px;
-            font-size: 13px;
             border: none;
             cursor: pointer;
+            font-size: 13px;
         }
 
         .slot.free {
@@ -161,105 +93,216 @@
             cursor: not-allowed;
             opacity: 0.7;
         }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="tabs">
-            <div id="tabContainer">
-                <div class="tab"><a href="user.html">Broneerimine</a></div>
-                <div class="tab active">Ajakava</div>
-            </div>
-        </div>
-        <div class="button-container">
-            <button id="logoutBtn" class="btn btn-custom logout-btn ml-2">Logi välja</button>
-        </div>
-    </div>
 
-    <div class="container mt-3">
-        <input type="date" id="datePicker" class="form-control mb-3">
-        <div id="scheduleContainer"></div>
-    </div>
-
-    <div id="notification" class="notification"></div>
-
-<script>
-    const times = [
-        '09:00','09:30','10:00','10:30','11:00','11:30',
-        '12:00','12:30','13:00','13:30','14:00','14:30',
-        '15:00','15:30','16:00'
-    ];
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('datePicker').value = today;
-        loadSchedule();
-    });
-
-    document.getElementById('datePicker').addEventListener('change', loadSchedule);
-
-    async function loadSchedule() {
-        const date = document.getElementById('datePicker').value;
-
-        const res = await fetch(`/api/schedule?date=${date}`);
-        const data = await res.json();
-
-        const container = document.getElementById('scheduleContainer');
-        container.innerHTML = '';
-
-        data.forEach(doc => {
-            const card = document.createElement('div');
-            card.className = 'doctor-card';
-
-            card.innerHTML = `
-                <div class="doctor-name">
-                    👨‍⚕️ ${doc.employee.firstName}
-                </div>
-
-                <div class="slots">
-                    ${doc.slots.map(s => `
-                        <button
-                            class="slot ${s.status}"
-                            ${s.status === 'busy' ? 'disabled' : ''}
-                            onclick="book(${doc.employee.id}, '${s.time}', '${date}')"
-                        >
-                            ${s.time}
-                        </button>
-                    `).join('')}
-                </div>
-            `;
-
-            container.appendChild(card);
-        });
-    }
-
-    async function book(employeeId, time, date) {
-        return; // ничего не делаем при клике
-    }
-
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-        try {
-            await fetch('/api/users/logout', {
-                method: 'POST'
-            });
-        } catch (error) {
-            console.error('Viga väljalogimisel:', error);
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
         }
 
-        window.location.href = 'login.html';
+        .modal-content {
+            background: white;
+            margin: 15% auto;
+            padding: 20px;
+            width: 400px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .notification {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 6px;
+            color: white;
+        }
+
+        .notification.success { background: #28a745; }
+        .notification.error { background: #dc3545; }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <div class="tabs">
+        <div id="tabContainer">
+            <div class="tab"><a href="user.html">Broneerimine</a></div>
+            <div class="tab active">Ajakava</div>
+        </div>
+    </div>
+
+    <div class="button-container">
+        <button id="logoutBtn" class="btn btn-custom">Logi välja</button>
+    </div>
+</div>
+
+<div class="container">
+    <input type="date" id="datePicker" class="form-control mb-3">
+    <div id="scheduleContainer"></div>
+</div>
+
+<div id="notification" class="notification"></div>
+
+<!-- MODAL -->
+<div id="bookingModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="modalClose">&times;</span>
+
+        <h5>Broneeri aeg</h5>
+        <p id="modalDoctor"></p>
+        <p id="modalTime"></p>
+
+        <input type="text" id="patientName" class="form-control" placeholder="Patsiendi nimi">
+
+        <button id="confirmBooking" class="btn btn-primary mt-3">Broneeri</button>
+    </div>
+</div>
+
+<script>
+const times = [
+    '09:00','09:30','10:00','10:30','11:00','11:30',
+    '12:00','12:30','13:00','13:30','14:00','14:30',
+    '15:00','15:30','16:00'
+];
+
+let selectedBooking = null;
+
+const modal = document.getElementById('bookingModal');
+const modalDoctor = document.getElementById('modalDoctor');
+const modalTime = document.getElementById('modalTime');
+const patientNameInput = document.getElementById('patientName');
+
+document.addEventListener('DOMContentLoaded', () => {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('datePicker').value = today;
+    loadSchedule();
+});
+
+document.getElementById('datePicker').addEventListener('change', loadSchedule);
+
+// ===== LOAD SCHEDULE =====
+async function loadSchedule() {
+    const date = document.getElementById('datePicker').value;
+
+    const res = await fetch(`/api/schedule?date=${date}`);
+    const data = await res.json();
+
+    const container = document.getElementById('scheduleContainer');
+    container.innerHTML = '';
+
+    data.forEach(doc => {
+        const card = document.createElement('div');
+        card.className = 'doctor-card';
+
+        card.innerHTML = `
+            <div class="doctor-name">👨‍⚕️ ${doc.employee.firstName}</div>
+
+            <div class="slots">
+                ${doc.slots.map(s => `
+                    <button
+                        class="slot ${s.status}"
+                        ${s.status === 'busy' ? 'disabled' : ''}
+                        data-employee="${doc.employee.id}"
+                        data-time="${s.time}"
+                        data-date="${date}"
+                        data-doctor="${doc.employee.firstName}"
+                    >
+                        ${s.time}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+
+        container.appendChild(card);
+    });
+}
+
+// ===== CLICK ON SLOT =====
+document.addEventListener('click', (e) => {
+    if (!e.target.classList.contains('slot')) return;
+    if (e.target.classList.contains('busy')) return;
+
+    const employeeId = e.target.dataset.employee;
+    const time = e.target.dataset.time;
+    const date = e.target.dataset.date;
+    const doctorName = e.target.dataset.doctor;
+
+    selectedBooking = { employeeId, time, date };
+
+    modalDoctor.textContent = `Arst: ${doctorName}`;
+    modalTime.textContent = `Aeg: ${time} ${date}`;
+
+    patientNameInput.value = '';
+    modal.style.display = 'block';
+});
+
+// ===== CONFIRM BOOKING =====
+document.getElementById('confirmBooking').addEventListener('click', async () => {
+    const patientName = patientNameInput.value.trim();
+
+    if (!selectedBooking) return;
+
+    const res = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+            employee_id: selectedBooking.employeeId,
+            appointment_date: selectedBooking.date,
+            appointment_time: selectedBooking.time,
+            patient_name: patientName
+        })
     });
 
-    function showNotification(message, type) {
-        const notification = document.getElementById('notification');
+    const data = await res.json();
 
-        notification.textContent = message;
-        notification.className = 'notification ' + type;
-        notification.style.display = 'block';
-
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 3000);
+    if (!res.ok) {
+        showNotification(data.message || 'Error', 'error');
+        return;
     }
+
+    showNotification('Broneering tehtud!', 'success');
+    modal.style.display = 'none';
+    loadSchedule();
+});
+
+// ===== CLOSE MODAL =====
+document.getElementById('modalClose').onclick = () => modal.style.display = 'none';
+
+window.onclick = (e) => {
+    if (e.target === modal) modal.style.display = 'none';
+};
+
+// ===== LOGOUT =====
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await fetch('/api/users/logout', { method: 'POST' });
+    window.location.href = 'login.html';
+});
+
+// ===== NOTIFICATION =====
+function showNotification(message, type) {
+    const n = document.getElementById('notification');
+    n.textContent = message;
+    n.className = 'notification ' + type;
+    n.style.display = 'block';
+
+    setTimeout(() => n.style.display = 'none', 3000);
+}
 </script>
+
 </body>
 </html>
