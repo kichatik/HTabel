@@ -34,6 +34,19 @@
             cursor: pointer;
         }
 
+        .btn {
+            border-radius: 5px;
+            padding: 6px 12px;
+        }
+
+        .card-action-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+            align-items: center;
+        }
+
         .booking-btn:hover {
             color: #000;
         }
@@ -150,7 +163,7 @@
             </div>
         </div>
         <div class="button-container">
-            <button id="openBookingBtn" class="btn btn-success ml-2 booking-btn">Broneeri aeg</button>
+            <button id="openBookingBtn" class="btn btn-custom booking-btn ml-2">Broneeri aeg</button>
             <button id="logoutBtn" class="btn btn-custom logout-btn ml-2">Logi välja</button>
         </div>
     </div>
@@ -161,7 +174,7 @@
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
 
-            <h3>Broneeri aeg</h3>
+            <h3 id="bookingModalTitle">Broneeri aeg</h3>
 
             <label>Pantsiendi nimi ja perekonna-</label>
             <input type="text" id="patientName" class="form-control">
@@ -190,6 +203,9 @@
     <div class="container" id="appointmentsContainer"></div>
 
 <script>
+    let editingAppointmentId = null;
+    let currentAppointments = [];
+
     async function loadAppointments() {
         try {
             const res = await fetch('/api/appointments/my', {
@@ -205,6 +221,7 @@
 
             const container = document.getElementById('appointmentsContainer');
             container.innerHTML = '';
+            currentAppointments = appointments;
 
             if (!appointments.length) {
                 container.innerHTML = '<p>Broneeringuid pole</p>';
@@ -217,14 +234,23 @@
 
                 card.innerHTML = `
                     <b>Arst:</b> ${app.employee?.firstName || ''} ${app.employee?.lastName || ''}<br>
+                    <b>Patsient:</b> ${app.patient_name || ''}<br>
                     <b>Kuupäev:</b> ${app.appointment_date}<br>
                     <b>Aeg:</b> ${app.appointment_time?.slice(0, 5)}<br>
                     <b>Staatus:</b> ${app.status}<br>
 
-                    <button class="btn btn-sm btn-danger mt-2"
-                        onclick="cancelAppointment(${app.id})">
-                        Tühista
-                    </button>
+                    <div class="card-action-group">
+                        ${app.status === 'bookitud' ? `
+                            <button class="btn btn-sm btn-primary"
+                                onclick="openEditModal(${app.id})">
+                                Muuda
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-danger"
+                            onclick="cancelAppointment(${app.id})">
+                            Tühista
+                        </button>
+                    </div>
                 `;
 
                 container.appendChild(card);
@@ -259,7 +285,29 @@
         }
     }
 
-    async function loadDoctors() {
+    async function openEditModal(id) {
+        const appointment = currentAppointments.find(app => app.id === id);
+
+        if (!appointment) {
+            showNotification('Broneeringut ei leitud', 'error');
+            return;
+        }
+
+        editingAppointmentId = id;
+        document.getElementById('bookingModalTitle').textContent = 'Muuda broneeringut';
+        document.querySelector('#bookingModal .btn-success').textContent = 'Salvesta muudatus';
+        document.getElementById('patientName').value = appointment.patient_name || '';
+
+        await loadDoctors(appointment.employee_id);
+        await setMinDate(appointment.appointment_date);
+        document.getElementById('date').value = appointment.appointment_date;
+        await loadAvailableTimes();
+        document.getElementById('time').value = appointment.appointment_time?.slice(0, 5) || '';
+
+        document.getElementById('bookingModal').style.display = 'block';
+    }
+
+    async function loadDoctors(selectedDoctorId) {
         try {
             const res = await fetch('/api/employees', {
                 credentials: 'include'
@@ -284,7 +332,7 @@
                 select.appendChild(option);
             });
 
-            select.value = '';
+            select.value = selectedDoctorId || '';
 
         } catch (err) {
             console.error(err);
@@ -292,9 +340,14 @@
     }
 
     document.getElementById('openBookingBtn').addEventListener('click', async () => {
-
+        editingAppointmentId = null;
+        document.getElementById('bookingModalTitle').textContent = 'Broneeri aeg';
+        document.querySelector('#bookingModal .btn-success').textContent = 'Kinnita';
         document.getElementById('patientName').value = '';
         document.getElementById('time').innerHTML = '';
+        document.getElementById('doctorSelect').innerHTML = '';
+        document.getElementById('date').value = '';
+        document.getElementById('consent').checked = false;
 
         await loadDoctors();
         await setMinDate();
@@ -334,22 +387,18 @@
             });
             const appointments = await res.json();
 
-            // Занятые времена
-            const busyTimes = appointments.map(app =>
-                app.appointment_time.slice(0, 5)
-            );
+            const busyTimes = appointments
+                .filter(app => app.id !== editingAppointmentId)
+                .map(app => app.appointment_time.slice(0, 5));
 
             timeSelect.innerHTML =
                 '<option value="">Vali aeg</option>';
 
             availableTimes.forEach(time => {
                 if (!busyTimes.includes(time)) {
-
                     const option = document.createElement('option');
-
                     option.value = time;
                     option.textContent = time;
-
                     timeSelect.appendChild(option);
                 }
             });
@@ -361,15 +410,18 @@
 
     function closeModal() {
         document.getElementById('bookingModal').style.display = 'none';
+        editingAppointmentId = null;
+        document.getElementById('bookingModalTitle').textContent = 'Broneeri aeg';
+        document.querySelector('#bookingModal .btn-success').textContent = 'Kinnita';
     }
 
-    async function setMinDate() {
+    async function setMinDate(dateValue) {
         const dateInput = document.getElementById('date');
 
         const today = new Date().toISOString().split('T')[0];
 
         dateInput.min = today;
-        dateInput.value = today;
+        dateInput.value = dateValue || today;
 
         await loadAvailableTimes();
     }
@@ -392,8 +444,11 @@
             return;
         }
 
-        const res = await fetch('/api/appointments', {
-            method: 'POST',
+        const url = editingAppointmentId ? `/api/appointments/${editingAppointmentId}` : '/api/appointments';
+        const method = editingAppointmentId ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method,
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -407,7 +462,7 @@
         const data = await res.json();
 
         if (res.ok) {
-            showNotification('Broneering on loodud!', 'success');
+            showNotification(editingAppointmentId ? 'Broneering uuendatud!' : 'Broneering on loodud!', 'success');
             closeModal();
             await loadAppointments();
         } else {

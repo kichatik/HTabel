@@ -12,5 +12,7 @@ module.exports = app => {
 
     router.put('/cancel/:id', appointmentController.cancelAppointment);
 
+    router.put('/:id', appointmentController.updateAppointment);
+
     app.use('/api/appointments', router);
 };

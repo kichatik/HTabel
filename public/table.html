@@ -208,7 +208,7 @@
 
         async function loadEmployees(floorType) {
             try {
-                const response = await fetch('/employees');
+                const response = await fetch('/api/employees');
 
                 if (!response.ok) {
                     throw new Error('Viga töötajate laadimisel');
