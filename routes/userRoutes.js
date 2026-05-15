@@ -12,6 +12,10 @@ module.exports = app => {
     router.get('/me', userController.me);
 
     router.post('/register', userController.register);
+
+    router.post('/forgot-password', userController.forgotPassword);
+    
+    router.post('/reset-password', userController.resetPassword);
     // Admin
     router.post('/admin/users', userController.createUserByAdmin);
 

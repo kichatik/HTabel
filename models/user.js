@@ -8,6 +8,7 @@ const User = sequelize.define('User', {
         autoIncrement: true,
         primaryKey: true,
     },
+
     username: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -18,6 +19,21 @@ const User = sequelize.define('User', {
             }
         }
     },
+
+    email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+        validate: {
+            isEmail: {
+                msg: 'Vale email'
+            },
+            notEmpty: {
+                msg: 'Email on kohustuslik'
+            }
+        }
+    },
+
     password: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -31,24 +47,41 @@ const User = sequelize.define('User', {
             }
         }
     },
+
     role: {
         type: DataTypes.ENUM('admin', 'user'),
         allowNull: false,
         defaultValue: 'user',
+    },
+    resetToken: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    resetTokenExp: {
+        type: DataTypes.DATE,
+        allowNull: true
     }
+
 }, {
     timestamps: false,
+
     hooks: {
         beforeValidate: (user) => {
             if (user.username) {
                 user.username = user.username.trim();
             }
+
+            if (user.email) {
+                user.email = user.email.trim().toLowerCase();
+            }
         },
+
         beforeCreate: async (user) => {
             if (user.password) {
                 user.password = await bcrypt.hash(user.password, 10);
             }
         },
+
         beforeUpdate: async (user) => {
             if (user.changed('password')) {
                 user.password = await bcrypt.hash(user.password, 10);

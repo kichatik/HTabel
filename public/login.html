@@ -155,6 +155,19 @@
             color: #888;
         }
 
+        .forgtPass {
+            color: #0d6efd;
+            cursor: pointer;
+            text-decoration: underline;
+            display: inline-block;
+            margin-top: 10px;
+            margin-left: 10px;
+        }
+
+        .forgtPass:hover {
+            color: #0a58ca;
+        }
+
         .notification {
             display: none; 
             position: fixed; 
@@ -205,6 +218,9 @@
             <span class="register-link" onclick="goRegister()">
                 Loo konto
             </span>
+            <span class="forgtPass" onclick="ForgPass()">
+                Unustasid parooli?
+            </span>
         </div>
     </div>
 
@@ -213,6 +229,8 @@
             <span class="close" onclick="closeRegister()">&times;</span>
 
             <h3 class="mb-3">Loo konto</h3>
+            
+            <input id="regEmail" type="email" class="form-control" placeholder="Email">
 
             <input id="regUsername" class="form-control" placeholder="Login">
 
@@ -220,6 +238,27 @@
 
             <button class="btn btn-primary w-100" onclick="registerUser()">
                 Loo konto
+            </button>
+        </div>
+    </div>
+
+    <div id="forgotModal" class="modal">
+        <div class="modal-content">
+            <span class="close"
+                onclick="closeForgot()">
+                &times;
+            </span>
+
+            <h3>Parooli taastamine</h3>
+
+            <input id="forgotEmail"
+                type="email"
+                class="form-control"
+                placeholder="Sisesta email">
+
+            <button class="btn btn-primary"
+                    onclick="recoverPassword()">
+                Saada
             </button>
         </div>
     </div>
@@ -240,14 +279,26 @@
         }
 
         async function registerUser() {
-            const username = document.getElementById('regUsername').value;
-            const password = document.getElementById('regPassword').value;
+            const username =
+                document.getElementById('regUsername').value;
+
+            const email =
+                document.getElementById('regEmail').value;
+
+            const password =
+                document.getElementById('regPassword').value;
 
             try {
                 const res = await fetch('/api/users/register', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username,
+                        email,
+                        password
+                    })
                 });
 
                 const data = await res.json();
@@ -259,8 +310,8 @@
 
                 showNotification('Kasutaja loodud', 'success');
 
-                // очистка полей
                 document.getElementById('regUsername').value = '';
+                document.getElementById('regEmail').value = '';
                 document.getElementById('regPassword').value = '';
 
                 setTimeout(() => {
@@ -323,6 +374,61 @@
                 showNotification(error.message, 'error');
             }
         });
+
+        async function ForgPass() {
+        const email = prompt("Sisesta email:");
+
+        if (!email) return;
+
+        const res = await fetch('/api/users/forgot-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            showNotification('Email saadetud', 'success');
+        } else {
+            showNotification(data.message, 'error');
+        }
+    }
+
+        function ForgPass() {
+            document.getElementById('forgotModal').style.display = 'block';
+        }
+
+        function closeForgot() {
+            document.getElementById('forgotModal').style.display = 'none';
+        }
+
+        async function recoverPassword() {
+            const email = document.getElementById('forgotEmail').value;
+
+            const res = await fetch('/api/users/forgot-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showNotification(data.message, 'error');
+                return;
+            }
+
+            showNotification('Email saadetud', 'success');
+
+            setTimeout(() => {
+                closeForgot();
+            }, 500);
+        }
 
         // Показ уведомлений
         function showNotification(message, type) {

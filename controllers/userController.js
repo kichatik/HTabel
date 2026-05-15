@@ -1,9 +1,12 @@
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const transporter = require('../utils/mailer');
 
-function validateRequiredCredentials(username, password) {
-    if (!username || !username.trim() || !password) {
-        return 'Kasutajanimi ja parool on kohustuslikud';
+function validateRequiredCredentials(username, email, password) {
+    if (!username || !username.trim() || !email || !password) {
+        return 'Kasutajanimi, email ja parool on kohustuslikud';
     }
 
     if (password.length < 6) {
@@ -19,22 +22,28 @@ function isAdmin(sessionUser) {
 
 exports.login = async (req, res) => {
     const { username, password } = req.body;
-    const normalizedUsername = username?.trim();
 
-    if (!normalizedUsername || !password) {
+    const loginValue = username?.trim().toLowerCase();
+
+    if (!loginValue || !password) {
         return res.status(400).json({
-            message: 'Kasutajanimi ja parool on kohustuslikud'
+            message: 'Kasutajanimi/email ja parool on kohustuslikud'
         });
     }
 
     try {
         const user = await User.findOne({
-            where: { username: normalizedUsername }
+            where: {
+                [require('sequelize').Op.or]: [
+                    { username: loginValue },
+                    { email: loginValue }
+                ]
+            }
         });
 
         if (!user) {
             return res.status(401).json({
-                message: 'Vale kasutajanimi või parool'
+                message: 'Vale kasutajanimi/email või parool'
             });
         }
 
@@ -42,13 +51,14 @@ exports.login = async (req, res) => {
 
         if (!passwordMatch) {
             return res.status(401).json({
-                message: 'Vale kasutajanimi või parool'
+                message: 'Vale kasutajanimi/email või parool'
             });
         }
 
         req.session.user = {
             id: user.id,
             username: user.username,
+            email: user.email,
             role: user.role
         };
 
@@ -57,11 +67,14 @@ exports.login = async (req, res) => {
             user: {
                 id: user.id,
                 username: user.username,
+                email: user.email,
                 role: user.role
             }
         });
+
     } catch (error) {
         console.error('Viga sisselogimisel:', error);
+
         return res.status(500).json({
             message: 'Serveri viga'
         });
@@ -105,10 +118,12 @@ exports.me = async (req, res) => {
 
 exports.createFirstUser = async (req, res) => {
     try {
-        const { username, password } = req.body;
-        const normalizedUsername = username?.trim();
+        const { username, email, password } = req.body;
 
-        const validationError = validateRequiredCredentials(normalizedUsername, password);
+        const normalizedUsername = username?.trim();
+        const normalizedEmail = email?.trim().toLowerCase();
+
+        const validationError = validateRequiredCredentials(normalizedUsername, normalizedEmail, password);
         if (validationError) {
             return res.status(400).json({
                 message: validationError
@@ -125,6 +140,7 @@ exports.createFirstUser = async (req, res) => {
 
         const newUser = await User.create({
             username: normalizedUsername,
+            email: normalizedEmail,
             password,
             role: 'admin'
         });
@@ -134,6 +150,7 @@ exports.createFirstUser = async (req, res) => {
             user: {
                 id: newUser.id,
                 username: newUser.username,
+                email: newUser.email,
                 role: newUser.role
             }
         });
@@ -147,12 +164,14 @@ exports.createFirstUser = async (req, res) => {
 
 exports.register = async (req, res) => {
     try {
-        const { username, password } = req.body;
-        const normalizedUsername = username?.trim();
+        const { username, email, password } = req.body;
 
-        if (!normalizedUsername || !password) {
+        const normalizedUsername = username?.trim();
+        const normalizedEmail = email?.trim().toLowerCase();
+
+        if (!normalizedUsername || !normalizedEmail || !password) {
             return res.status(400).json({
-                message: 'Kasutajanimi ja parool on kohustuslikud'
+                message: 'Kasutajanimi, email ja parool on kohustuslikud'
             });
         }
 
@@ -163,19 +182,25 @@ exports.register = async (req, res) => {
         }
 
         const existing = await User.findOne({
-            where: { username: normalizedUsername }
+            where: {
+                [require('sequelize').Op.or]: [
+                    { username: normalizedUsername },
+                    { email: normalizedEmail }
+                ]
+            }
         });
 
         if (existing) {
             return res.status(409).json({
-                message: 'Kasutaja on juba olemas'
+                message: 'Kasutaja või email on juba olemas'
             });
         }
 
         const user = await User.create({
             username: normalizedUsername,
+            email: normalizedEmail,
             password,
-            role: 'user' // 🔥 всегда user
+            role: 'user'
         });
 
         return res.status(201).json({
@@ -183,13 +208,17 @@ exports.register = async (req, res) => {
             user: {
                 id: user.id,
                 username: user.username,
+                email: user.email,
                 role: user.role
             }
         });
 
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ message: 'Serveri viga' });
+
+        return res.status(500).json({
+            message: 'Serveri viga'
+        });
     }
 };
 
@@ -201,10 +230,12 @@ exports.createUserByAdmin = async (req, res) => {
             });
         }
 
-        const { username, password, role } = req.body;
-        const normalizedUsername = username?.trim();
+        const { username, email, password, role } = req.body;
 
-        const validationError = validateRequiredCredentials(normalizedUsername, password);
+        const normalizedUsername = username?.trim();
+        const normalizedEmail = email?.trim().toLowerCase();
+
+        const validationError = validateRequiredCredentials(normalizedUsername, normalizedEmail, password);
         if (validationError) {
             return res.status(400).json({
                 message: validationError
@@ -213,25 +244,33 @@ exports.createUserByAdmin = async (req, res) => {
 
         const safeRole = role === 'admin' ? 'admin' : 'user';
 
+        const { Op } = require('sequelize');
+
         const existingUser = await User.findOne({
-            where: { username: normalizedUsername }
+            where: {
+                [Op.or]: [
+                    { username: normalizedUsername },
+                    { email: normalizedEmail }
+                ]
+            }
         });
 
         if (existingUser) {
             return res.status(409).json({
-                message: 'Sellise nimega kasutaja on juba olemas'
+                message: 'Kasutajanimi või email on juba olemas'
             });
         }
 
         const newUser = await User.create({
             username: normalizedUsername,
+            email: normalizedEmail,
             password,
             role: safeRole
         });
-
         return res.status(201).json({
             id: newUser.id,
             username: newUser.username,
+            email: newUser.email,
             role: newUser.role
         });
     } catch (error) {
@@ -239,6 +278,119 @@ exports.createUserByAdmin = async (req, res) => {
         return res.status(500).json({
             message: 'Viga kasutaja loomisel'
         });
+    }
+};
+
+exports.forgotPassword = async (req, res) => {
+    try {
+
+        const { email } = req.body;
+
+        const user = await User.findOne({ where: { email } });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const token = crypto.randomBytes(32).toString("hex");
+
+        user.resetToken = token;
+        user.resetTokenExp = new Date(Date.now() + 30 * 60 * 1000);
+        await user.save();
+
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: user.email,
+            subject: "Reset password",
+            html: `
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:20px;font-family:Arial;">
+                <tr>
+                    <td align="center">
+
+                        <table width="500" style="background:#ffffff;border-radius:10px;padding:20px;">
+
+                            <!-- LOGO 👇 ВОТ СЮДА -->
+                            <tr>
+                                <td align="center" style="padding-bottom:20px;">
+                                    <img src="https://raw.githubusercontent.com/kichatik/HTabel/master/img/logo.png"
+                                        width="80"
+                                        style="display:block;margin:0 auto;">
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td align="center">
+                                    <h2>Password Reset</h2>
+                                    <p>You requested a password reset</p>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td align="center" style="padding:20px;">
+                                    <a href="http://localhost:3000/reset-password.html?token=${token}"
+                                    style="background:#0d6efd;color:white;padding:12px 20px;text-decoration:none;border-radius:8px;">
+                                        Reset Password
+                                    </a>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td align="center" style="font-size:12px;color:#999;">
+                                    If you didn’t request this, ignore this email.
+                                </td>
+                            </tr>
+
+                        </table>
+
+                    </td>
+                </tr>
+            </table>
+            `
+        });
+
+        return res.json({ message: "Email sent" });
+
+    } catch (err) {
+        console.error("ERROR:", err);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
+exports.resetPassword = async (req, res) => {
+    try {
+        const { token, password } = req.body;
+
+        const user = await User.findOne({
+            where: {
+                resetToken: token
+            }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                message: 'Invalid token'
+            });
+        }
+
+        if (user.resetTokenExp < new Date()) {
+            return res.status(400).json({
+                message: 'Token expired'
+            });
+        }
+
+        user.password = password;
+        user.resetToken = null;
+        user.resetTokenExp = null;
+
+        await user.save();
+
+        return res.json({
+            message: 'Password updated'
+        });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Server error' });
     }
 };
 
@@ -251,7 +403,7 @@ exports.findAll = async (req, res) => {
         }
 
         const users = await User.findAll({
-            attributes: ['id', 'username', 'role'],
+            attributes: ['id', 'username', 'email', 'role'],
             order: [['id', 'ASC']]
         });
 
