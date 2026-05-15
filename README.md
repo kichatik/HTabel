@@ -28,6 +28,8 @@ Projekt aitab vähendada patsientide eksimist hoones, parandada kasutajakogemust
 - Asukohtade otsimine
 - API kaudu andmete pärimine ja haldamine
 - Lihtne kasutajaliides navigeerimiseks
+- Broneerimine arstide külastajatele
+- Arstide vastuvõtu tabeli vaatamine 
 
 ---
 
@@ -40,6 +42,7 @@ Projekt aitab vähendada patsientide eksimist hoones, parandada kasutajakogemust
 ├── models
 ├── routes
 ├── public
+├── utils
 │
 ├── .env
 ├── index.js
@@ -60,14 +63,19 @@ git clone https://github.com/kichatik/htable.git
 2. Paigalda sõltuvused:
 ```bash
 npm install
+npm install nodemailer
+npm install dotenv
 ```
 
 3. Loo `.env` fail:
 ```env
-DB_HOST=localhost
+DB_NAME=haigla_db
 DB_USER=root
-DB_PASSWORD=yourpassword
-DB_NAME=htable
+DB_PASS=
+DB_HOST=localhost
+SESSION_SECRET=some_long_random_secret_key_XXXX
+EMAIL_USER=yourmailk@gmail.com
+EMAIL_PASS="xxxx xxxx xxxx xxxx"
 ```
 
 4. Käivita server:
