@@ -201,7 +201,7 @@ exports.updateAppointment = async (req, res) => {
 
 exports.deleteById = async (req, res) => {
     try {
-        const userId = req.session.user.id; // или req.user.id если JWT
+        const userId = req.session.user.id;
         const appointmentId = req.params.id;
 
         const appointment = await Appointment.findByPk(appointmentId);
@@ -210,7 +210,6 @@ exports.deleteById = async (req, res) => {
             return res.status(404).json({ message: 'Broneeringut ei leitud' });
         }
 
-        // ❗ главное правило безопасности
         if (appointment.user_id !== userId) {
             return res.status(403).json({
                 message: 'Sul pole õigust seda broneeringut kustutada'

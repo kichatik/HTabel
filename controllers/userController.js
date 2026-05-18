@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const transporter = require('../utils/mailer');
 
+// Validate that username, email, and password meet minimum requirements
 function validateRequiredCredentials(username, email, password) {
     if (!username || !username.trim() || !email || !password) {
         return 'Kasutajanimi, email ja parool on kohustuslikud';
@@ -16,6 +17,7 @@ function validateRequiredCredentials(username, email, password) {
     return null;
 }
 
+// Check if user session has admin role
 function isAdmin(sessionUser) {
     return Boolean(sessionUser && sessionUser.role === 'admin');
 }

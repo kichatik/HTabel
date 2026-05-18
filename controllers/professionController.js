@@ -1,6 +1,5 @@
 const Profession = require('../models/profession');
 
-// Kõigi erialade saamine
 exports.findAll = async (req, res) => {
     try {
         const professions = await Profession.findAll({
@@ -14,7 +13,6 @@ exports.findAll = async (req, res) => {
     }
 };
 
-// Uue eriala lisamine
 exports.create = async (req, res) => {
     let { name } = req.body;
 

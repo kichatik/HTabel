@@ -343,6 +343,49 @@
             $('#workTeam').val(workTeam);
             $('#workTeam').prop('readonly', true);
 
+            let editingEmployeeId = null;
+
+            function openEditModal(employeeId) {
+                const employee = currentEmployees.find(e => e.id == employeeId);
+                if (!employee) return;
+
+                editingEmployeeId = employeeId;
+                $('#addEmployeeModalLabel').text('Muuda töötajat');
+                $('#addEmployeeForm button[type="submit"]').text('Salvesta muudatused');
+
+                $('#employeeName').val(employee.firstName);
+                $('#roomNumber').val(employee.roomNumber);
+                $('#profession').val(employee.professionId);
+                $('#workTeam').val(employee.workTeam);
+
+                $('#monday').val(employee.monday || '');
+                $('#mondayStatus').val(employee.mondayStatus || '');
+                $('#tuesday').val(employee.tuesday || '');
+                $('#tuesdayStatus').val(employee.tuesdayStatus || '');
+                $('#wednesday').val(employee.wednesday || '');
+                $('#wednesdayStatus').val(employee.wednesdayStatus || '');
+                $('#thursday').val(employee.thursday || '');
+                $('#thursdayStatus').val(employee.thursdayStatus || '');
+                $('#friday').val(employee.friday || '');
+                $('#fridayStatus').val(employee.fridayStatus || '');
+                $('#saturday').val(employee.saturday || '');
+                $('#saturdayStatus').val(employee.saturdayStatus || '');
+                $('#sunday').val(employee.sunday || '');
+                $('#sundayStatus').val(employee.sundayStatus || '');
+
+                $('#addEmployeeModal').modal('show');
+            }
+
+            $('#addEmployeeBtn').on('click', function() {
+                editingEmployeeId = null;
+                $('#addEmployeeModalLabel').text('Lisa töötaja');
+                $('#addEmployeeForm button[type="submit"]').text('Salvesta');
+                $('#addEmployeeForm')[0].reset();
+                $('#workTeam').val(workTeam);
+            });
+
+            let currentEmployees = [];
+
             async function loadEmployees() {
                 try {
                     const response = await fetch('/api/employees');
@@ -352,6 +395,7 @@
                         throw new Error('Viga töötajate laadimisel');
                     }
 
+                    currentEmployees = employees;
                     displayEmployees(filterEmployeesByFloor(employees, floorNumber, workTeam));
                 } catch (error) {
                     showNotification('Viga töötajate laadimisel: ' + error.message, 'error');
@@ -416,7 +460,10 @@
                                     <td>${employee.friday || ''} ${formatStatusBadge(employee.fridayStatus)}</td>
                                     <td>${employee.saturday || ''} ${formatStatusBadge(employee.saturdayStatus)}</td>
                                     <td>${employee.sunday || ''} ${formatStatusBadge(employee.sundayStatus)}</td>
-                                    <td><button class="btn btn-sm deleteBtn delete-btn" data-id="${employee.id}">Kustuta</button></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning editBtn" data-id="${employee.id}">Muuda</button>
+                                        <button class="btn btn-sm deleteBtn delete-btn" data-id="${employee.id}">Kustuta</button>
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -451,7 +498,7 @@
             $('#addEmployeeForm').on('submit', async function (e) {
                 e.preventDefault();
 
-                const newEmployee = {
+                const employeeData = {
                     firstName: $('#employeeName').val().trim(),
                     roomNumber: parseInt($('#roomNumber').val(), 10),
                     professionId: parseInt($('#profession').val(), 10),
@@ -479,34 +526,38 @@
                     sundayStatus: $('#sundayStatus').val(),
                 };
 
-                if (!newEmployee.firstName || Number.isNaN(newEmployee.roomNumber) || Number.isNaN(newEmployee.professionId) || !newEmployee.workTeam) {
-                    showNotification('Täida kõik kohustuslikud väljad', 'error');
+                if (!employeeData.firstName || Number.isNaN(employeeData.roomNumber) || Number.isNaN(employeeData.professionId) || !employeeData.workTeam) {
+                    showNotification('Täida kaikki kohustuslikud väljad', 'error');
                     return;
                 }
 
                 try {
-                    const response = await fetch('/api/employees', {
-                        method: 'POST',
+                    const url = editingEmployeeId ? `/api/employees/${editingEmployeeId}` : '/api/employees';
+                    const method = editingEmployeeId ? 'PUT' : 'POST';
+
+                    const response = await fetch(url, {
+                        method: method,
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify(newEmployee)
+                        body: JSON.stringify(employeeData)
                     });
 
                     const data = await response.json().catch(() => ({}));
 
                     if (!response.ok) {
-                        throw new Error(data.error || data.message || 'Viga töötaja lisamisel');
+                        throw new Error(data.error || data.message || 'Viga töötaja salvestamisel');
                     }
 
                     closeModalSafe();
                     $('#addEmployeeForm')[0].reset();
                     $('#workTeam').val(workTeam);
-                    showNotification('Töötaja lisamine õnnestus', 'success');
+                    showNotification(editingEmployeeId ? 'Töötaja andmed uuendatud' : 'Töötaja lisamine õnnestus', 'success');
+                    editingEmployeeId = null;
                     loadEmployees();
                 } catch (error) {
                     showNotification(error.message, 'error');
-                    console.error('Viga töötaja lisamisel:', error);
+                    console.error('Viga töötaja salvestamisel:', error);
                 }
             });
 
@@ -544,6 +595,11 @@
                     if (confirm('Kas olete kindel, et soovite töötaja kustutada?')) {
                         deleteEmployee(employeeId);
                     }
+                });
+
+                $('.editBtn').on('click', function () {
+                    const employeeId = $(this).data('id');
+                    openEditModal(employeeId);
                 });
             }
 

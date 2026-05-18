@@ -20,6 +20,7 @@
             align-items: center;
             justify-content: space-between;
             background-color: #ffffff;
+            color: black;
             padding: 20px;
         }
 
@@ -30,11 +31,15 @@
         .tab {
             margin-right: 15px;
             padding: 10px;
+            border: 1px solid transparent;
             border-radius: 5px;
             cursor: pointer;
         }
 
-        .tab.active { background: gray; }
+        .tab.active {
+            background-color: gray;
+            color: black;
+        }
 
         .tab a { text-decoration: none; color: black; }
 
@@ -46,6 +51,11 @@
             border: none;
             border-radius: 5px;
             padding: 10px 15px;
+            cursor: pointer;
+        }
+
+        .logout-btn {
+            background-color: #007bff;
         }
 
         .container {
@@ -147,7 +157,7 @@
     </div>
 
     <div class="button-container">
-        <button id="logoutBtn" class="btn btn-custom">Logi välja</button>
+        <button id="logoutBtn" class="btn btn-custom logout-btn ml-2">Logi välja</button>
     </div>
 </div>
 

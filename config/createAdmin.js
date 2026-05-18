@@ -1,19 +1,21 @@
 const { sequelize } = require('./database');
 const User = require('../models/User');
 
+// Synchronize database and create initial admin user if database is empty
 async function createAdmin() {
     try {
         await sequelize.sync();
 
         const admin = await User.create({
             username: 'admin',
+            email: 'admin@example.com',
             password: 'admin123',
             role: 'admin'
         });
 
-        console.log('Админ создан:', admin.username);
+        console.log('Admin created:', admin.username);
     } catch (error) {
-        console.error('Ошибка создания админа:', error.message);
+        console.error('Error creating admin:', error.message);
     } finally {
         await sequelize.close();
     }

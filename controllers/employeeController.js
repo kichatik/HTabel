@@ -21,6 +21,7 @@ const allowedFields = [
     'sundayStatus'
 ];
 
+// Extract only allowed fields from request object to prevent unauthorized data modification
 function pickFields(obj, fields) {
     const result = {};
 
